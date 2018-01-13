@@ -1,0 +1,33 @@
+{
+  "name": "woveon-logger",
+  "version": "0.0.1",
+  "description": "A simple logger with colorization and expressive syntax.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test1 -b"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/woveon/woveon-logger.git"
+  },
+  "keywords": [
+    "log",
+    "logger",
+    "color"
+  ],
+  "author": "Chadwick Wingrave",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/woveon/woveon-logger/issues"
+  },
+  "homepage": "https://github.com/woveon/woveon-logger#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "sprintf-js": "^1.1.1"
+  },
+  "devDependencies": {
+    "mocha": "^4.1.0",
+    "path": "^0.12.7",
+    "should": "^13.2.1"
+  }
+}

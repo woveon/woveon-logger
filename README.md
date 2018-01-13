@@ -8,7 +8,7 @@ The main feature wanted was a logger that spewed a line and file in my source co
 Looks better in color...
 
 
-    [2018-01-13T11:38:23.969Z] [INFO--] [test1] [             woveon-logger/test/test1:15] test1: logger
+    [2018-01-13T11:38:23.969Z] [INFO--] [concern1] [             woveon-logger/test/test1:15] concern1: logger
     [2018-01-13T11:38:23.972Z] [INFO--] info1
     [2018-01-13T11:38:23.972Z] [WARN--] [             woveon-logger/test/test1:19] warn1
     [2018-01-13T11:38:23.972Z] [ERROR-] [             woveon-logger/test/test1:20] error1

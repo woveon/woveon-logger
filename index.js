@@ -3,11 +3,11 @@
 const sprintf = require('sprintf-js').sprintf;
 const colors  = require('colors/safe');
 
-if ( __line == undefined ) {
+if ( typeof __line === 'undefined' ) {
 	Object.defineProperty(global, '__line', {get: () => {return __stack[1].getLineNumber();}});
 }
 
-if ( __stack == undefined ) {
+if ( typeof __stack === 'undefined' ) {
 Object.defineProperty(global, '__stack', {
   get: (...theArgs) => {
     let orig = Error.prepareStackTrace;

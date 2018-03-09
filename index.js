@@ -4,12 +4,14 @@ const sprintf = require('sprintf-js').sprintf;
 const colors  = require('colors/safe');
 
 if ( typeof __line === 'undefined' ) {
-	Object.defineProperty(global, '__line', {get: () => {return __stack[1].getLineNumber();}});
+  Object.defineProperty(global, '__line', {
+    get : () => { return __stack[1].getLineNumber();}
+  });
 }
 
 if ( typeof __stack === 'undefined' ) {
 Object.defineProperty(global, '__stack', {
-  get: (...theArgs) => {
+  get : (...theArgs) => {
     let orig = Error.prepareStackTrace;
     Error.prepareStackTrace = (_, stack) => {return stack;};
     let err = new Error;
@@ -23,6 +25,7 @@ Object.defineProperty(global, '__stack', {
 
 
 module.exports = class Logger {
+
   /**
    * A custom logger.
    * @param {string} _name
@@ -37,13 +40,14 @@ module.exports = class Logger {
       debug          : false,
       debugOnError   : true,
       timeSinceStart : false,
+      add_to_stacklvl: 0,       // debug shows in one stackframe above... useful for debugging function spew
       lblCharLen     : 7,
       dbCharLen      : 40,
       showName       : false,
       trimTo         : 'src',
       outputTo       : 'console', // or 'string'
       color          : false,     // sets color, overriding 'colors'
-      colors         : {'default': 'none', 'error': 'red', 'warn': 'yellow', 'info': 'green'},
+      colors         : {'default' : 'none', 'error' : 'red', 'warn' : 'yellow', 'info' : 'green'},
     };
     this.tempOptions = {};
 
@@ -65,11 +69,9 @@ module.exports = class Logger {
     }
 
     this.options = Object.assign({}, this.defaultOptions, _options);
-//    console.log('Logger options ', this.options);
     this.private = {
-      starttime: Date.now(),
+      starttime : Date.now(),
     };
-    //console.log('options', this.options);
   };
 
 
@@ -79,8 +81,8 @@ module.exports = class Logger {
    * @return {*} - string if outputTo is true, null otherwise
    */
   info(...theArgs)    {return this._log('INFO', {}, theArgs);};
-  warn(...theArgs)    {return this._log('WARN', {debug: true}, theArgs);};
-  error(...theArgs)   {return this._log('ERROR', {debug: true}, theArgs);};
+  warn(...theArgs)    {return this._log('WARN', {debug : true}, theArgs);};
+  error(...theArgs)   {return this._log('ERROR', {debug : true}, theArgs);};
   verbose(...theArgs) {return this._log('VERBOSE', {}, theArgs);};
 
 
@@ -89,7 +91,7 @@ module.exports = class Logger {
    * @param {*} theArgs - array of variables to print
    */
   throwError(...theArgs) {
-    let retval = this.with({outputTo: 'string', forceLog: true, debug: true})
+    let retval = this.with({outputTo : 'string', forceLog : true, debug : true})
       ._log('ERROR', {}, theArgs);
     throw new Error(retval);
   }
@@ -108,7 +110,20 @@ module.exports = class Logger {
    * @return {bool} true on success
    */
   log(_tag, ...theArgs) {
-    // console.log(`***log : ${_tag}, ${JSON.stringify(this.logtags[_tag])}`);
+    if ( this.logtags[_tag] != null ) {
+      return this._log(_tag, this.logtags[_tag], theArgs );
+    }
+  }
+
+  /**
+   * Same as log above. The idea is to think of an aspect (as in
+   * Aspect Oriented Programming, a cross-cutting concern) to log.
+   *
+   * @param {string} _tag
+   * @param {*} theArgs
+   * @return {bool} true on success
+   */
+  aspect(_tag, ...theArgs) {
     if ( this.logtags[_tag] != null ) {
       return this._log(_tag, this.logtags[_tag], theArgs );
     }
@@ -126,12 +141,13 @@ module.exports = class Logger {
     } else {
       let tagops = null;
       if ( typeof _val == 'object' ) {
-        tagops = Object.assign({forceLog: true}, _val); // note that forceLog can be undone
-      }
-      else if ( _val == true ) {
+        tagops = Object.assign({forceLog : true}, _val); // note that forceLog can be undone
+      } else if ( _val == true ) {
         tagops = this.logtags[_tag] || {}; // grab existing entry if it exists
         tagops.forceLog = true;
-      } else { throw new Error(`Unknown logger tag(${_tag}) value: ${_val}.`); }
+      } else {
+        throw new Error(`Unknown logger tag(${_tag}) value: ${_val}.`);
+      }
       this.logtags[_tag] = tagops;
     }
   }
@@ -142,13 +158,14 @@ module.exports = class Logger {
    * @param {string} _key
    * @param {*} _val
    * @param {bool} _throw - if true, throws exception on bad key
-   * @return {this} 
+   * @return {this} -
    */
   set(_key, _val, _throw = true) {
     if ( _key in this.defaultOptions ) {
       this.options[_key] = _val;
     } else if ( _throw == true ) {
-      throw new Error(`Logger trying to set unknown option '${_key}'.`); }
+      throw new Error(`Logger trying to set unknown option '${_key}'.`);
+    }
     return this;
   }
 
@@ -162,9 +179,9 @@ module.exports = class Logger {
    */
   with(_key, _val, _throw = true) {
     let newtemp = null;
-    if ( typeof _key == 'object' )  { newtemp = _key; }
+    if ( typeof _key == 'object' ) { newtemp = _key; }
     else { newtemp = {}; newtemp[_key] = _val; }
-    this.tempOptions = Object.assign({},this.tempOptions,newtemp); // newtemp overwrite
+    this.tempOptions = Object.assign({}, this.tempOptions, newtemp); // newtemp overwrite
 //    console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
     return this;
   }
@@ -198,15 +215,10 @@ module.exports = class Logger {
     let retval = null;
 
     // compiled options for this logger call
- //   console.log(' _log temp       : ', JSON.stringify(this.tempOptions));
-    let calloptions = Object.assign({},this.options,this.tempOptions, _options);
+    let calloptions = Object.assign({}, this.options, this.tempOptions, _options);
     this.tempOptions = {};
 
     if ( this.logCheck(_lbl, calloptions) == false ) return retval;
-
-//    console.log(' _log defaults   : ', JSON.stringify(this.options));
-//    console.log(' _log called with: ', JSON.stringify(_options));
-//    console.log(' _log using      : ', JSON.stringify(calloptions));
 
     let ts = null;
     // timestamped information (debug is since start)
@@ -221,9 +233,9 @@ module.exports = class Logger {
       for (; stacklvl < (__stack.length - 1); stacklvl++) {
         if (__stack[stacklvl].getFileName() != __filename) break;
       }
-//      console.log('stacklvl ',stacklvl);
+//      console.log('stacklvl : ', stacklvl, calloptions.add_to_stacklvl);
+      if ( calloptions.add_to_stacklvl ) stacklvl += calloptions.add_to_stacklvl;
       let fn = __stack[stacklvl].getFileName();
-//        let fun = __stack[stacklvl].getFunctionName();
       let ln = __stack[stacklvl].getLineNumber();
       let p = this.trimpath(fn, calloptions.trimTo) + ':' + ln;
       let len = calloptions.dbCharLen;
@@ -247,7 +259,6 @@ module.exports = class Logger {
     switch (calloptions.outputTo) {
       case 'string':
         retval = _args.join(' ');
-//        console.log('string: ', retval);
         break;
       case 'console':
         console.log.apply(this, _args);
@@ -262,8 +273,9 @@ module.exports = class Logger {
 
 
   /**
-   * Get teh function that colors text based upon a label. 'none' or null does nothing.
+   * Get the function that colors text based upon a label. 'none' or null does nothing.
    * @param {*} _lbl
+   * @param {object} _color - Selected color
    * @param {object} _colors - Color options
    * @return {function}
    */
@@ -336,9 +348,9 @@ module.exports = class Logger {
   h1() {
 
     console.log('\n\n\n');
-    this._log('h1', {forceLog: true, color: 'blue'},
+    this._log('h1', {forceLog : true, color : 'blue'},
         ['*******************************************************']);
-    this.with({color: 'blue'});
+    this.with({color : 'blue'});
     return this;
   }
 
@@ -348,9 +360,9 @@ module.exports = class Logger {
    */
   h2() {
     console.log('\n\n');
-    this._log('h2', {forceLog: true, color: 'blue'},
+    this._log('h2', {forceLog : true, color : 'blue'},
         ['=======================================================']);
-    this.with({color: 'blue'});
+    this.with({color : 'blue'});
     return this;
   }
 
@@ -360,9 +372,9 @@ module.exports = class Logger {
    */
   h3() {
     console.log('\n');
-    this._log('h3', {forceLog: true, color: 'blue'}, 
+    this._log('h3', {forceLog : true, color : 'blue'},
         ['-------------------------------------------------------']);
-    this.with({color: 'blue'});
+    this.with({color : 'blue'});
     return this;
   }
 

@@ -5,7 +5,7 @@ const colors  = require('colors/safe');
 
 if ( typeof __line === 'undefined' ) {
   Object.defineProperty(global, '__line', {
-    get : () => { return __stack[1].getLineNumber();}
+    get : () => {return __stack[1].getLineNumber();},
   });
 }
 
@@ -35,19 +35,19 @@ module.exports = class Logger {
   constructor(_name, _options= {}, _logtags = {}) {
     this.name = _name;
     this.defaultOptions = {
-      forceLog       : false,   // if true, logs despite any level settings. used for tags
-      level          : 'info',
-      debug          : false,
-      debugOnError   : true,
-      timeSinceStart : false,
-      add_to_stacklvl: 0,       // debug shows in one stackframe above... useful for debugging function spew
-      lblCharLen     : 7,
-      dbCharLen      : 40,
-      showName       : false,
-      trimTo         : 'src',
-      outputTo       : 'console', // or 'string'
-      color          : false,     // sets color, overriding 'colors'
-      colors         : {'default' : 'none', 'error' : 'red', 'warn' : 'yellow', 'info' : 'green'},
+      forceLog        : false,   // if true, logs despite any level settings. used for tags
+      level           : 'info',
+      debug           : false,
+      debugOnError    : true,
+      timeSinceStart  : false,
+      add_to_stacklvl : 0,       // debug shows in one stackframe above... useful for debugging function spew
+      lblCharLen      : 7,
+      dbCharLen       : 40,
+      showName        : false,
+      trimTo          : 'src',
+      outputTo        : 'console', // or 'string'
+      color           : false,     // sets color, overriding 'colors'
+      colors          : {'default' : 'none', 'error' : 'red', 'warn' : 'yellow', 'info' : 'green'},
     };
     this.tempOptions = {};
 
@@ -84,6 +84,8 @@ module.exports = class Logger {
   warn(...theArgs)    {return this._log('WARN', {debug : true}, theArgs);};
   error(...theArgs)   {return this._log('ERROR', {debug : true}, theArgs);};
   verbose(...theArgs) {return this._log('VERBOSE', {}, theArgs);};
+  debug(...theArgs) {return this._log('DEBUG', {}, theArgs);};
+  silly(...theArgs) {return this._log('SILLY', {}, theArgs);};
 
 
   /**
@@ -171,6 +173,17 @@ module.exports = class Logger {
 
 
   /**
+   * Set the level of logging to _val.
+   * NOTE: Equivalent to "this.set('level',_val)".
+   *
+   * @param {*} _val
+   * @param {bool} _throw - if true, throws exception on bad key
+   * @return {this} -
+   */
+  lvl(_val, _throw = true) {return this.set('level', _val, _throw);}
+
+
+  /**
    * Temp option, used on next loggging.
    * @param {*} _key
    * @param {*} _val
@@ -179,8 +192,8 @@ module.exports = class Logger {
    */
   with(_key, _val, _throw = true) {
     let newtemp = null;
-    if ( typeof _key == 'object' ) { newtemp = _key; }
-    else { newtemp = {}; newtemp[_key] = _val; }
+    if ( typeof _key == 'object' ) newtemp = _key;
+    else {newtemp = {}; newtemp[_key] = _val;}
     this.tempOptions = Object.assign({}, this.tempOptions, newtemp); // newtemp overwrite
 //    console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
     return this;
@@ -233,7 +246,6 @@ module.exports = class Logger {
       for (; stacklvl < (__stack.length - 1); stacklvl++) {
         if (__stack[stacklvl].getFileName() != __filename) break;
       }
-//      console.log('stacklvl : ', stacklvl, calloptions.add_to_stacklvl);
       if ( calloptions.add_to_stacklvl ) stacklvl += calloptions.add_to_stacklvl;
       let fn = __stack[stacklvl].getFileName();
       let ln = __stack[stacklvl].getLineNumber();
@@ -285,7 +297,9 @@ module.exports = class Logger {
     if ( color == null ) {color = _colors.default;}
     if ( color == 'none' ) {
       retval = (_str) => {return _str;};
-    } else {retval = colors[color];}
+    } else {
+      retval = colors[color];
+    }
     return retval;
   }
 
@@ -299,8 +313,8 @@ module.exports = class Logger {
    */
   pad(pad, str, padLeft) {
     if (typeof str === 'undefined') return pad;
-    if (padLeft) { return (pad + str).slice(-pad.length); }
-    else { return (str + pad).substring(0, pad.length); }
+    if (padLeft) return (pad + str).slice(-pad.length);
+    else return (str + pad).substring(0, pad.length);
   }
 
 

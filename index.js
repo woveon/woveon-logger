@@ -67,6 +67,7 @@ module.exports = class Logger {
         this.setLogTag(tag, _logtags[tag]);
       }
     }
+    this.setLogTag('wldeprecated', _logtags['wldeprecated']); // wldeprecated are on by default
 
     this.options = Object.assign({}, this.defaultOptions, _options);
     this.private = {
@@ -136,7 +137,7 @@ module.exports = class Logger {
    * @param {string} _tag
    * @param {*} _val - options for the logger or false to turn off (and retain values)
    */
-  setLogTag(_tag, _val = {}) {
+  setAspect(_tag, _val = {}) {
     if ( _val == false ) {
       if ( this.logtags[_tag] == null ) this.logtags[_tag] = {};
       this.logtags[_tag].forceLog = false;
@@ -153,7 +154,16 @@ module.exports = class Logger {
       this.logtags[_tag] = tagops;
     }
   }
+  /** phase out */
+  setLogTag(_tag, _val = {}) {this.logDeprecated(); this.setAspect(_tag, _val);}
 
+
+  /**
+   * Call to show dissaproval for this method.
+   * @param {strings} theArgs - msgs to print after main message.
+   * @return {object} this
+   */
+  logDeprecated(...theArgs) {this.with('debug', true); return this.log('wldeprecated', `DEPRECATED: should avoid this call.`, theArgs);}
 
   /**
    * Helper function to set an option.

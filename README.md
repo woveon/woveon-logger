@@ -3,32 +3,12 @@
 
 The main feature wanted was a logger that spewed a line and file in my source code. Additional feature were added to the logger over time.
 
-## Example output
+## Sample output
+
+I inlined the javascript that generated this output.
 
 ![Sample logger output (from mocha test)](img/sampleoutput.png?raw=true "Sample Logger Output")
 
-Generated with code:
-
-```
-let logger1 = new Logger('logger1', {level : 'info'});
-let logger2 = new Logger('logger2', {level : 'verbose', showName : true, debug: true});
-logger1.info('general logging information');
-logger1.set('showName', true).info('showing logger name');
-logger1.warn('warning message, always shows file and line number');
-logger1.error('error message, always shows file and line number');
-logger1.set('debug', true).info('adding file and line numbers to regular output');
-logger1.verbose('undisplayed verbose logging information');
-logger2.verbose('verbose logging information');
-logger2.aspect('aspect1', 'undisplayed aspect text');
-logger1.setAspect('aspect1');
-logger1.aspect('aspect1', 'displayed aspect text');
-logger1.set('color', 'blue').info('a splash of color');
-logger1.info('still colored');
-logger1.set('color', false);
-logger1.info('back to normal color');
-logger1.with('color', 'magenta').info('a one-time splash of color');
-logger1.info('back to default color');
-```
 
 ## Features
 

@@ -14,24 +14,44 @@ describe(`${mtag}: Logger code testing`, () => {
   it(`${mtag}: logger`, async () => {
     logger.info(`${mtag}: logger`);
 
+
+    console.log("// let logger1 = new Logger('logger1', {level : 'info'});");
     let logger1 = new Logger('logger1', {level : 'info'});
+    console.log("// let logger2 = new Logger('logger2', {level : 'verbose', showName : true, debug: true});");
     let logger2 = new Logger('logger2', {level : 'verbose', showName : true, debug: true});
+    console.log("// logger1.info('general logging information');");
     logger1.info('general logging information');
+    console.log("// logger1.set('showName', true).info('showing logger name');");
     logger1.set('showName', true).info('showing logger name');
+    console.log("// logger1.warn('warning message, always shows file and line number');");
     logger1.warn('warning message, always shows file and line number');
+    console.log("// logger1.error('error message, always shows file and line number');");
     logger1.error('error message, always shows file and line number');
+    console.log("// logger1.set('debug', true).info('adding file and line numbers to regular output');");
     logger1.set('debug', true).info('adding file and line numbers to regular output');
+    console.log("// logger1.verbose('undisplayed verbose logging information');");
     logger1.verbose('undisplayed verbose logging information');
+    console.log("// logger2.verbose('verbose logging information');");
     logger2.verbose('verbose logging information');
+    console.log("// logger2.aspect('aspect1', 'undisplayed aspect text');");
     logger2.aspect('aspect1', 'undisplayed aspect text');
+    console.log("// logger1.setAspect('aspect1');");
     logger1.setAspect('aspect1');
+    console.log("// logger1.aspect('aspect1', 'displayed aspect text');");
     logger1.aspect('aspect1', 'displayed aspect text');
+    console.log("// logger1.set('color', 'blue').info('a splash of color');");
     logger1.set('color', 'blue').info('a splash of color');
+    console.log("// logger1.info('still colored');");
     logger1.info('still colored');
+    console.log("// logger1.set('color', false);");
     logger1.set('color', false);
+    console.log("// logger1.info('back to normal color');");
     logger1.info('back to normal color');
+    console.log("// logger1.with('color', 'magenta').info('a one-time splash of color');");
     logger1.with('color', 'magenta').info('a one-time splash of color');
+    console.log("// logger1.info('back to default color');");
     logger1.info('back to default color');
+
     // logger1.h1().h2().h3().info('after headers');
   });
 

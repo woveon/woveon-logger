@@ -1,7 +1,7 @@
 {
   "name": "woveon-logger",
-  "version": "0.0.1",
-  "description": "A simple logger with colorization and expressive syntax.",
+  "version": "0.0.2",
+  "description": "A simple logger with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.",
   "main": "index.js",
   "scripts": {
     "test": "mocha test1 -b"
@@ -16,7 +16,7 @@
     "color"
   ],
   "author": "Chadwick Wingrave",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/woveon/woveon-logger/issues"
   },

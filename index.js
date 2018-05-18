@@ -56,18 +56,19 @@ module.exports = class Logger {
       warn    : 1,
       info    : 2,
       verbose : 3,
-      debug   : 4,
-      silly   : 5,
+      trace   : 4,
+      debug   : 5,
+      silly   : 6,
     };
 
     // set logtags
     this.logtags = {};
     for (let tag in _logtags ) {
       if ( _logtags.hasOwnProperty(tag) ) {
-        this.setLogTag(tag, _logtags[tag]);
+        this.setAspect(tag, _logtags[tag]);
       }
     }
-    this.setLogTag('wldeprecated', _logtags['wldeprecated']); // wldeprecated are on by default
+    this.setAspect('deprecated', _logtags['deprecated']); // deprecated are on by default
 
     this.options = Object.assign({}, this.defaultOptions, _options);
     this.private = {
@@ -103,9 +104,9 @@ module.exports = class Logger {
   /**
    * User defined tags that can log when their values are defined and true.
    * ```
-   *  logger.setLogTag('A',false);
+   *  logger.setAspect('A',false);
    *  logger.log('A','A1');          // no output
-   *  logger.setLogTag('A',true);
+   *  logger.setAspect('A',true);
    *  logger.log('A','A2');          // output
    * ```
    * @param {string} _tag
@@ -113,6 +114,7 @@ module.exports = class Logger {
    * @return {bool} true on success
    */
   log(_tag, ...theArgs) {
+    this.logDeprecated('woveon-logger: method .log should be replaced with .aspect');
     if ( this.logtags[_tag] != null ) {
       return this._log(_tag, this.logtags[_tag], theArgs );
     }
@@ -134,6 +136,7 @@ module.exports = class Logger {
 
   /**
    * Call to add a tag to log directly to, or turn off.
+   * NOTE: because this saves forceLog as false, instead of deleting tag, it retains settings between tag toggles
    * @param {string} _tag
    * @param {*} _val - options for the logger or false to turn off (and retain values)
    */
@@ -155,7 +158,7 @@ module.exports = class Logger {
     }
   }
   /** phase out */
-  setLogTag(_tag, _val = {}) {this.logDeprecated(); this.setAspect(_tag, _val);}
+  setLogTag(_tag, _val = {}) {this.logDeprecated('woveon-logger: method setLogTag should use setAspect'); this.setAspect(_tag, _val);}
 
 
   /**
@@ -163,7 +166,7 @@ module.exports = class Logger {
    * @param {strings} theArgs - msgs to print after main message.
    * @return {object} this
    */
-  logDeprecated(...theArgs) {this.with('debug', true); return this.log('wldeprecated', `DEPRECATED: should avoid this call.`, theArgs);}
+  logDeprecated(...theArgs) {return this.with('debug', true).aspect('deprecated', `DEPRECATED: should avoid this call.`, theArgs);}
 
   /**
    * Helper function to set an option.

@@ -45,6 +45,9 @@ I inlined the javascript that generated this output.
   
 ### Options
 
+These options can be set at start `new Logger('mylogger', {level: 'verbose', debug: true})`, at run time `logger.set('color', 'blue')`, or at run time for use in only the next call `logger.with('color', 'blue')`.
+
+  - level (default: 'info'): logging level... if at or lower, print message
   - debug (default: false): whether to print line and file information
   - debugOnError (default: true): whether to print line and file information for error and warnings
   - timeSinceStart (default: false): prints zulu time when false, time since start of execution if true

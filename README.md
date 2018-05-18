@@ -1,7 +1,7 @@
 # woveon-logger
-> A simple logger with colorization and expressive syntax.
+> A simple logger with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.
 
-The main feature wanted was a logger that spewed a line and file in my source code. Additional feature were added to the logger over time, as well as making it more expressive in it's syntax.
+The main feature wanted was a logger that spewed a line and file in my source code. Additional feature were added to the logger over time.
 
 ## Example output
 

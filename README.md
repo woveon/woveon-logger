@@ -32,7 +32,7 @@ I inlined the javascript that generated this output.
   - ex. `logger.lvl('error')` or `logger.lvl('verbose')`
 
 - **aspect-oriented logging**: 
-  - turn aspect on: `logger.setAspect('foo');`
+  - turn aspect on: `logger.setAspect('foo');` or off: `logger.setAspect('foo', false)`
   - log when aspect set: `logger.aspect('foo', 'my logging message');`
 
 - **throw Error**: logs the message and throws an error with that message: `logger.throwError('foo')`

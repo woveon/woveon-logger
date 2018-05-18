@@ -7,7 +7,7 @@ The main feature wanted was a logger that spewed a line and file in my source co
 
 I inlined the javascript that generated this output.
 
-![Sample logger output (from mocha test)](img/sampleoutput.png?raw=true "Sample Logger Output")
+![Sample logger output (from mocha test)](img/sampleoutput.png?raw=true#asddd "Sample Logger Output")
 
 
 ## Features

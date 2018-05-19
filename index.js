@@ -418,6 +418,18 @@ module.exports = class Logger {
   wrapAMethod(_obj, _meth, ...initArgs) {return this._wrapFunc(_obj, _meth, true, initArgs);}
 
   /**
+    * Don't use this. Created as temporary function for my own code.
+    * @param {string} _text - message to print
+    * @param {object} _args - list of arguments (unused)
+    * @param {function} _func -
+    * @return {func}
+    */
+  wrap(_text, _args, _func) {
+    this.logDeprecated('Do not use this wrap function. Use the wrapFunc or whatever as this has unused args.');
+    return this._wrapFunc(null, _func, true, _text);
+  }
+
+  /**
    * Master function for wrapping functions.
    * @param {object} _binding - an object or class to bind the function to
    * @param {function} _func - the function

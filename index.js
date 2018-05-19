@@ -2,6 +2,7 @@
 
 const sprintf = require('sprintf-js').sprintf;
 const colors  = require('colors/safe');
+const esArgs  = require('es-arguments');
 
 if ( typeof __line === 'undefined' ) {
   Object.defineProperty(global, '__line', {
@@ -405,6 +406,67 @@ module.exports = class Logger {
     return this;
   }
 
+
+  /**
+   * Wrap an existing function in a logging message, that prints its parameters.
+   * @param {func} _func - The function/arrowfunc or method to be wrapped.
+   * @return {func}
+   */
+  wrapFunc(_func, ...initArgs) {return this._wrapFunc(null, _func, false, initArgs);}
+  wrapAFunc(_func, ...initArgs) {return this._wrapFunc(null, _func, true, initArgs);}
+  wrapMethod(_obj, _meth, ...initArgs) {return this._wrapFunc(_obj, _meth, false, initArgs);}
+  wrapAMethod(_obj, _meth, ...initArgs) {return this._wrapFunc(_obj, _meth, true, initArgs);}
+
+  /**
+   * Master function for wrapping functions.
+   * @param {object} _binding - an object or class to bind the function to
+   * @param {function} _func - the function
+   * @param {bool} _isAsync - return an async function or not
+   * @return {function} - returns a function that may be async and/or bound
+   */
+  _wrapFunc(_binding, _func, _isAsync, ...initArgs) {
+    let l = this;
+    let ismethod = false;
+    let retval = null;
+
+    let eargs=null;
+    try {
+      eargs = esArgs(_func);
+    } catch (e) {
+      let s = _func.toString();
+      let firstword = s.substr(0, s.indexOf(' '));
+      if ( firstword == 'async' ) {
+        s = 'async function ' + s.substr(s.indexOf(' ')); // add async function to removed 'async' of function
+      } else {
+        s = 'function ' + s; // just add function
+      }
+      console.log('trying agin with h: ', s);
+      try {
+        eargs = esArgs(s);
+        ismethod = true;
+      } catch (e) {console.log(e);}
+    }
+
+    if ( ! _isAsync ) {
+      retval = function(...args) {
+        l.info('function ', initArgs);
+        let pn = Math.max(args.length, eargs.length);
+        for (let i=0; i<pn; i++ ) {l.info(`  ${eargs[i]} = ${args[i]}`);}
+        if ( ! ismethod ) _func(...args);
+        else {_func.bind(_binding)(...args);}
+      };
+    } else {
+      retval = async function(...args) {
+        l.info('function ', initArgs);
+        let pn = Math.max(args.length, eargs.length);
+        for (let i=0; i<pn; i++ ) {l.info(`  ${eargs[i]} = ${args[i]}`);}
+        if ( ! ismethod ) _func(...args);
+        else {_func.bind(_binding)(...args);}
+      };
+    }
+
+    return retval;
+  }
 
 };
 

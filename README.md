@@ -3,6 +3,8 @@
 
 The main feature wanted was a logger that spewed a line and file in my source code. Additional features were added to the logger over time.
 
+[NPM Location](https://www.npmjs.com/package/woveon-logger)
+
 ## Sample output
 
 I inlined the javascript that generated this output.

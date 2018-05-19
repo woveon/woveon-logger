@@ -83,12 +83,13 @@ module.exports = class Logger {
    * @param {*} theArgs - array of variables to print
    * @return {*} - string if outputTo is true, null otherwise
    */
-  info(...theArgs)    {return this._log('INFO', {}, theArgs);};
-  warn(...theArgs)    {return this._log('WARN', {debug : true}, theArgs);};
-  error(...theArgs)   {return this._log('ERROR', {debug : true}, theArgs);};
+  info(...theArgs)    {return this._log('INFO',    {}, theArgs);};
+  warn(...theArgs)    {return this._log('WARN',    {debug : true}, theArgs);};
+  error(...theArgs)   {return this._log('ERROR',   {debug : true}, theArgs);};
   verbose(...theArgs) {return this._log('VERBOSE', {}, theArgs);};
-  debug(...theArgs) {return this._log('DEBUG', {}, theArgs);};
-  silly(...theArgs) {return this._log('SILLY', {}, theArgs);};
+  trace(...theArgs)   {return this._log('TRACE',   {}, theArgs);};
+  debug(...theArgs)   {return this._log('DEBUG',   {}, theArgs);};
+  silly(...theArgs)   {return this._log('SILLY',   {}, theArgs);};
 
 
   /**

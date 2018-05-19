@@ -413,10 +413,12 @@ module.exports = class Logger {
    * @param {func} _func - The function/arrowfunc or method to be wrapped.
    * @return {func}
    */
-  wrapFunc(_func, ...initArgs) {return this._wrapFunc(null, _func, false, initArgs);}
-  wrapAFunc(_func, ...initArgs) {return this._wrapFunc(null, _func, true, initArgs);}
-  wrapMethod(_obj, _meth, ...initArgs) {return this._wrapFunc(_obj, _meth, false, initArgs);}
-  wrapAMethod(_obj, _meth, ...initArgs) {return this._wrapFunc(_obj, _meth, true, initArgs);}
+  wrapFunc(_func, ...initArgs)             {return this._wrapFunc(null, _func, false, initArgs);}
+  wrapAFunc(_func, ...initArgs)            {return this._wrapFunc(null, _func, true,  initArgs);}
+  wrapBoundFunc(_obj, _func, ...initArgs)  {return this._wrapFunc(_obj, _func, false, initArgs);}
+  wrapABoundFunc(_obj, _func, ...initArgs) {return this._wrapFunc(_obj, _func, true,  initArgs);}
+  wrapMethod(_obj, _meth, ...initArgs)     {return this._wrapFunc(_obj, _meth, false, initArgs);}
+  wrapAMethod(_obj, _meth, ...initArgs)    {return this._wrapFunc(_obj, _meth, true,  initArgs);}
 
   /**
     * Don't use this. Created as temporary function for my own code.

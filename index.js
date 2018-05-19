@@ -426,7 +426,7 @@ module.exports = class Logger {
     * @return {func}
     */
   wrap(_text, _args, _func) {
-    this.logDeprecated('Do not use this wrap function. Use the wrapFunc or whatever as this has unused args.');
+    this.logDeprecated('Do not use this wrap function. Use the wrapFunc or whatever as this has unused args:', _text);
     return this._wrapFunc(null, _func, true, _text);
   }
 

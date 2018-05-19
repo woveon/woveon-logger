@@ -453,7 +453,7 @@ module.exports = class Logger {
       } else {
         s = 'function ' + s; // just add function
       }
-      console.log('trying agin with h: ', s);
+      // console.log('trying agin with h: ', s);
       try {
         eargs = esArgs(s);
         ismethod = true;

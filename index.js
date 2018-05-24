@@ -464,19 +464,23 @@ module.exports = class Logger {
 
     if ( ! _isAsync ) {
       retval = function(...args) {
+        let rr = null;
         l.info('function ', initArgs);
         let pn = Math.max(args.length, eargs.length);
         for (let i=0; i<pn; i++ ) {l.info(`  ${eargs[i]} = ${args[i]}`);}
-        if ( ! ismethod ) _func(...args);
-        else {_func.bind(_binding)(...args);}
+        if ( ! ismethod ) rr = _func(...args);
+        else {rr = _func.bind(_binding)(...args);}
+        return rr;
       };
     } else {
       retval = async function(...args) {
+        let rr = null;
         l.info('function ', initArgs);
         let pn = Math.max(args.length, eargs.length);
         for (let i=0; i<pn; i++ ) {l.info(`  ${eargs[i]} = ${args[i]}`);}
-        if ( ! ismethod ) _func(...args);
-        else {_func.bind(_binding)(...args);}
+        if ( ! ismethod ) rr = await _func(...args);
+        else {rr = await _func.bind(_binding)(...args);}
+        return rr;
       };
     }
 

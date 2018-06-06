@@ -300,6 +300,39 @@ module.exports = class Logger {
 
 
   /**
+   * Print the stack.
+   * @param {string} _text - output after 'Stack Trace', to markup about the stack
+   */
+  printStack(_text) {
+
+    let calloptions = Object.assign({}, this.options, this.tempOptions);
+    this.tempOptions = {};
+
+//    try { throw new Error();} catch (e) { console.log(e); }
+//    console.log('stack: ', __stack);
+    let stacklvl = 2;
+    for (; stacklvl < (__stack.length - 1); stacklvl++) {
+      if (__stack[stacklvl].getFileName() != __filename) break;
+    }
+    if ( calloptions.add_to_stacklvl ) stacklvl += calloptions.add_to_stacklvl;
+
+    let db = [`Stack Trace: ${_text}\n`];
+    for (; stacklvl < (__stack.length ); stacklvl++) {
+      let fn = __stack[stacklvl].getFileName();
+      let ln = __stack[stacklvl].getLineNumber();
+      let p = this.trimpath(fn, calloptions.trimTo) + ':' + ln;
+//      let len = calloptions.dbCharLen;
+//      console.log(' : ', fn, ln, p, len);
+      db.push(`  --- ${p}\n`);
+//      if (p.length > len) {
+//        db.push(` [${p.slice(-len + 1)}]`);
+//      } else db.push(' [' + sprintf('%' + len + 's', p) + ']');
+    }
+    this.with({forceLog : true, debug : true, color : 'blue'})._log('STACK', {}, db);
+
+  };
+
+  /**
    * Get the function that colors text based upon a label. 'none' or null does nothing.
    * @param {*} _lbl
    * @param {object} _color - Selected color

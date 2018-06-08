@@ -341,12 +341,27 @@ module.exports = class Logger {
    */
   getColorizer(_lbl, _color, _colors) {
     let retval = null;
-    let color = _color || _colors[_lbl.toLowerCase()];
-    if ( color == null ) {color = _colors.default;}
-    if ( color == 'none' ) {
+    let colorstring = _color || _colors[_lbl.toLowerCase()];
+    if ( colorstring == null ) {colorstring = _colors.default;}
+    if ( colorstring == 'none' ) {
       retval = (_str) => {return _str;};
     } else {
-      retval = colors[color];
+
+      let cs = colorstring.split(' ');
+      if ( cs.length == 1 ) retval = colors[colorstring];
+      else {
+        // console.log('creating compound: ', cs);
+        retval = function(_str) {
+          let cscs = cs;
+          // console.log('....applying colors ', cscs);
+          let retval = _str;
+          for (let i=0; i<cscs.length; i++) {
+            retval = colors[cscs[i]](retval);
+            // console.log(retval);
+          };
+          return retval;
+        };
+      }
     }
     return retval;
   }
@@ -410,9 +425,9 @@ module.exports = class Logger {
   h1() {
 
     console.log('\n\n\n');
-    this._log('h1', {forceLog : true, color : 'blue'},
+    this._log('h1', {forceLog : true, color : 'inverse'},
         ['*******************************************************']);
-    this.with({color : 'blue'});
+    // this.with({color : 'blue'});
     return this;
   }
 
@@ -422,9 +437,9 @@ module.exports = class Logger {
    */
   h2() {
     console.log('\n\n');
-    this._log('h2', {forceLog : true, color : 'blue'},
+    this._log('h2', {forceLog : true, color : 'inverse'},
         ['=======================================================']);
-    this.with({color : 'blue'});
+    // this.with({color : 'blue'});
     return this;
   }
 
@@ -434,9 +449,9 @@ module.exports = class Logger {
    */
   h3() {
     console.log('\n');
-    this._log('h3', {forceLog : true, color : 'blue'},
+    this._log('h3', {forceLog : true, color : 'inverse'},
         ['-------------------------------------------------------']);
-    this.with({color : 'blue'});
+    // this.with({color : 'blue'});
     return this;
   }
 

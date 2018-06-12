@@ -1,5 +1,5 @@
 # woveon-logger
-> A logging toolkit with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.",
+> A logging toolkit with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax."
 
 
 [NPM Location](https://www.npmjs.com/package/woveon-logger)
@@ -15,10 +15,10 @@ I inlined the javascript that generated this output.
 
 * Debug mode: Prints line and file of the log message
 * Named log channels (ex. Logger1, Logger2, etc.), levels of concern (info, warn, error, verbose) and aspect-oriented (i.e. cross-cutting through your project).
-* Environment variables override options and aspects (quick reconfig).
+* Environment variables override options and aspects (quick reconfig, great for us container and microservice people).
 * Expressive sugar syntax:
   * Colorized output
-  * Supports h1,h2,h3 styled tags in log files. `logger.h1().info('text after a header 1 breaker`
+  * Supports h1,h2,h3 styled tags in log files. `logger.h1().info('text after a header 1 breaker')`
   * One time use settings via 'with'.
   * styling of different log levels and aspects (which are not lost when toggled off)
   * `throwError` to display the error message AND throw an exception with the same log message (I know right!).
@@ -64,6 +64,7 @@ These options can be set at start `new Logger('mylogger', {level: 'verbose', deb
 ### Environment Variables
 
 WOV\_LOGGER\_OPS - JSON format to overwrite logger options, by name. ex. export WOV\_LOGGER\_OPS='{"logger1" : {"color" : "blue"}, {"logger2" : {"color" : "green"}}'
+
 WOV\_LOGGER\_ASPECTS - Space separated aspects to turn on (and with '!', turn off). ex. export WOV\_LOGGER\_ASPECTS='ASP1 ASP2 !ASP3'
 
 

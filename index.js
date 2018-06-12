@@ -45,7 +45,7 @@ module.exports = class Logger {
       lblCharLen      : 7,
       dbCharLen       : 40,
       showName        : false,
-      trimTo          : 'src',
+      trimTo          : process.cwd(), // 'src',
       outputTo        : 'console', // or 'string'
       color           : false,     // sets color, overriding 'colors'
       colors          : {'default' : 'none', 'error' : 'red', 'warn' : 'yellow', 'info' : 'green'},

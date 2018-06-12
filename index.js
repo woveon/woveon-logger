@@ -62,7 +62,7 @@ module.exports = class Logger {
       silly   : 6,
     };
 
-    // set logtags
+    // et logtags (i.e. aspects)
     this.logtags = {};
     for (let tag in _logtags ) {
       if ( _logtags.hasOwnProperty(tag) ) {
@@ -70,12 +70,48 @@ module.exports = class Logger {
       }
     }
     this.setAspect('deprecated', _logtags['deprecated']); // deprecated are on by default
+    this.readEnvAspects(); // call after, so this overrides
 
-    this.options = Object.assign({}, this.defaultOptions, _options);
+    let envOps = this.readEnvOps();
+    this.options = Object.assign({}, this.defaultOptions, _options, envOps);
     this.private = {
       starttime : Date.now(),
     };
+
   };
+
+
+  /**
+   * Read WOV_LOGGER_OPS env variable and overrite all current options.
+   * @return {object} - parsed result of WOV_LOGGER_OPS
+   */
+  readEnvOps() {
+    let env = process.env.WOV_LOGGER_OPS;
+    let retval = {};
+    try {
+      if ( env != null ) {
+        retval = JSON.parse(env);
+      }
+    } catch (err) {
+      console.log('WARNING: woveon-logger: WOV_LOGGER_OPS env variable not valid JSON: Not incorporating WOV_LOGGER_OPS.');
+    }
+    return retval;
+  }
+
+
+  /**
+   * Parse the WOV_LOGGER_ASEPCTS env variable and assign them as aspects.
+   */
+  readEnvAspects() {
+    let aspects = process.env.WOV_LOGGER_ASPECTS.split(/\s+/);
+    for (let i=0; i<aspects.length; i++) {
+      let a = aspects[i];
+      if ( a == '' ) break;
+      let aval = true;
+      if ( a[0] == '!' ) {aval = false; a = a.substr(1);}
+      this.setAspect(a, aval);
+    }
+  }
 
 
   /**

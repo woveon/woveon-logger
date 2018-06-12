@@ -1,7 +1,6 @@
 # woveon-logger
-> A simple logger with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.
+> A logging toolkit with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.",
 
-The main feature wanted was a logger that spewed a line and file in my source code. Additional features were added to the logger over time.
 
 [NPM Location](https://www.npmjs.com/package/woveon-logger)
 
@@ -14,8 +13,9 @@ I inlined the javascript that generated this output.
 
 ## Features
 
-* Prints line and file of the log message
-* Named log channels (ex. Logger1, Logger2, etc.), levels of concern (info, warn, error, verbose) and cross-cutting tagged concerns (ex. lib, fetcher, backend, listener, etc.). 
+* Debug mode: Prints line and file of the log message
+* Named log channels (ex. Logger1, Logger2, etc.), levels of concern (info, warn, error, verbose) and aspect-oriented (i.e. cross-cutting through your project).
+* Environment variables override options and aspects (quick reconfig).
 * Expressive sugar syntax:
   * Colorized output
   * Supports h1,h2,h3 styled tags in log files. `logger.h1().info('text after a header 1 breaker`
@@ -61,3 +61,9 @@ These options can be set at start `new Logger('mylogger', {level: 'verbose', deb
   - color (default: false): sets color, overriding 'colors'
   - colors (default: {'default' : 'none', 'error' : 'red', 'warn' : 'yellow', 'info' : 'green'}): can define default colors per log level
   
+### Environment Variables
+
+WOV\_LOGGER\_OPS - JSON format to overwrite logger options. ex. export WOV\_LOGGER\_OPS='{"color" : "blue" }'
+WOV\_LOGGER\_ASPECTS - Space separated aspects to turn on (and with '!', turn off). ex. export WOV\_LOGGER\_ASPECTS='ASP1 ASP2 !ASP3'
+
+

@@ -58,25 +58,33 @@ describe(`${mtag}: Env variable checks for aspects`, () => {
 
   it(`${mtag}: no env set`, async () => {
 
-    delete process.env.WOV_LOGGER_OPS
-    logger = new Logger(`${mtag} Logger`, {debug : true, showName : true, color : 'green'});
+    delete process.env.WOV_LOGGER_OPS;
+    logger = new Logger(`logger`, {debug : true, showName : true, color : 'green'});
     logger.aspect('A', `This should be green: ${process.env.WOV_LOGGER_OPS}`);
 
     process.env.WOV_LOGGER_OPS='{}';
-    logger = new Logger(`${mtag} Logger`, {debug : true, showName : true, color : 'green'});
+    logger = new Logger(`logger`, {debug : true, showName : true, color : 'green'});
     logger.aspect('A', `This should be green: ${process.env.WOV_LOGGER_OPS}`);
 
-    process.env.WOV_LOGGER_OPS='{"color" : "blue" }';
-    logger = new Logger(`${mtag} Logger`, {debug : true, showName : true, color : 'green'});
+    process.env.WOV_LOGGER_OPS='{ "logger" : {"color" : "blue" }}';
+    logger = new Logger(`logger`, {debug : true, showName : true, color : 'green'});
     logger.aspect('A', `This should be blue: ${process.env.WOV_LOGGER_OPS}`);
 
-    process.env.WOV_LOGGER_OPS='{"debug" : "false" }';
-    logger = new Logger(`${mtag} Logger`, {debug : true, showName : true, color : 'green'});
+    process.env.WOV_LOGGER_OPS='{ "logger" : {"debug" : "false" }}';
+    logger = new Logger(`logger`, {debug : true, showName : true, color : 'green'});
     logger.aspect('A', `This should be no debug: ${process.env.WOV_LOGGER_OPS}`);
+    logger = new Logger(`logger1`, {debug : true, showName : true, color : 'green'});
+    logger.aspect('A', `This should be with debug: ${process.env.WOV_LOGGER_OPS}`);
 
-    delete process.env.WOV_LOGGER_OPS
-    logger = new Logger(`${mtag} Logger`, {debug : true, showName : true, color : 'green'});
+    delete process.env.WOV_LOGGER_OPS;
+    logger = new Logger(`logger`, {debug : true, showName : true, color : 'green'});
     logger.aspect('A', `This should be green: ${process.env.WOV_LOGGER_OPS}`);
+
+    process.env.WOV_LOGGER_OPS='{ "logger1" : {"color" : "yellow"}, "logger2" : {"color" : "red"}}';
+    logger1 = new Logger(`logger1`, {debug : true, showName : true, color : 'green'});
+    logger2 = new Logger(`logger2`, {debug : true, showName : true, color : 'green'});
+    logger1.aspect('A', `This should be yellow : ${process.env.WOV_LOGGER_OPS}`);
+    logger2.aspect('A', `This should be red: ${process.env.WOV_LOGGER_OPS}`);
   });
 });
 

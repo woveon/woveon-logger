@@ -90,7 +90,8 @@ module.exports = class Logger {
     let retval = {};
     try {
       if ( env != null ) {
-        retval = JSON.parse(env);
+        let allops = JSON.parse(env);
+        if ( allops[this.name] != null ) {retval = allops[this.name];}
       }
     } catch (err) {
       console.log('WARNING: woveon-logger: WOV_LOGGER_OPS env variable not valid JSON: Not incorporating WOV_LOGGER_OPS.');
@@ -103,13 +104,15 @@ module.exports = class Logger {
    * Parse the WOV_LOGGER_ASEPCTS env variable and assign them as aspects.
    */
   readEnvAspects() {
-    let aspects = process.env.WOV_LOGGER_ASPECTS.split(/\s+/);
-    for (let i=0; i<aspects.length; i++) {
-      let a = aspects[i];
-      if ( a == '' ) break;
-      let aval = true;
-      if ( a[0] == '!' ) {aval = false; a = a.substr(1);}
-      this.setAspect(a, aval);
+    if ( process.env.WOV_LOGGER_ASPECTS != null ) {
+      let aspects = process.env.WOV_LOGGER_ASPECTS.split(/\s+/);
+      for (let i=0; i<aspects.length; i++) {
+        let a = aspects[i];
+        if ( a == '' ) break;
+        let aval = true;
+        if ( a[0] == '!' ) {aval = false; a = a.substr(1);}
+        this.setAspect(a, aval);
+      }
     }
   }
 

@@ -63,7 +63,7 @@ These options can be set at start `new Logger('mylogger', {level: 'verbose', deb
   
 ### Environment Variables
 
-WOV\_LOGGER\_OPS - JSON format to overwrite logger options. ex. export WOV\_LOGGER\_OPS='{"color" : "blue" }'
+WOV\_LOGGER\_OPS - JSON format to overwrite logger options, by name. ex. export WOV\_LOGGER\_OPS='{"logger1" : {"color" : "blue"}, {"logger2" : {"color" : "green"}}'
 WOV\_LOGGER\_ASPECTS - Space separated aspects to turn on (and with '!', turn off). ex. export WOV\_LOGGER\_ASPECTS='ASP1 ASP2 !ASP3'
 
 

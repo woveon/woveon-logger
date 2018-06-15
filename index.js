@@ -77,7 +77,6 @@ module.exports = class Logger {
     this.private = {
       starttime : Date.now(),
     };
-
   };
 
 
@@ -306,8 +305,8 @@ module.exports = class Logger {
       let p = this.trimpath(fn, calloptions.trimTo) + ':' + ln;
       let len = calloptions.dbCharLen;
       if (p.length > len) {
-        db = ` [${p.slice(-len + 1)}]`;
-      } else db = ' [' + sprintf('%' + len + 's', p) + ']';
+        db = ` [${p.slice(-len + 0)}]`;
+      } else db = ' [' + sprintf('%-' + len + 's', p) + ']';
     }
 
     // The name of this logger
@@ -422,15 +421,16 @@ module.exports = class Logger {
 
   /**
    * Trims a full directory path to something manageable.
-   * @param {*} _fn
+   * @param {*} _fnfile -
    * @param {string} _trimto - how far back ot go
    * @param {*} _dotit
    * @return {string} - shorted filepath
    */
-  trimpath(_fn, _trimto, _dotit = false) {
-    let retval = _fn.substring(_fn.indexOf(_trimto) + (_trimto.length+1)); // get everything after 'lib'
-    retval = retval.replace(/\.[^/.]+$/, '');             // remove file extension
-    if (_dotit) retval = retval.replace(/\//g, '.');      // turn slashes to dots
+  trimpath(_fnfile, _trimto, _dotit = false) {
+    let c = Math.min(_fnfile.length, _trimto.length);
+    let br = 0;
+    for (let i=0; i<c; i++) {if ( _fnfile[i] == '/' ) br = i+1; if ( _fnfile[i] != _trimto[i] ) break;}
+    let retval = _fnfile.substring(br);
     return retval;
   };
 

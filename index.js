@@ -474,12 +474,15 @@ module.exports = class Logger {
    * @param {string} _aspect - aspect to use to determine if logging
    * @return {Logger}
    */
-  h1(_aspect = null) {
-
-    this._log(_aspect || 'h1', {forceLog : (_aspect?false:true), color : 'inverse'},
+    h1(_aspect = null) {
+    if ( _aspect )
+      this._log(_aspect, this.logtags[_aspect],
         ['\n\n\n*******************************************************']);
-    // this.with({color : 'blue'});
+    else
+      this._log('h1', {forceLog : true, color : 'inverse'},
+        ['\n\n\n*******************************************************']);
     return this;
+
   }
 
   /**
@@ -488,7 +491,11 @@ module.exports = class Logger {
    * @return {Logger}
    */
   h2(_aspect = null) {
-    this._log(_aspect || 'h2', {forceLog : (_aspect?false:true), color : 'inverse'},
+    if ( _aspect )
+      this._log(_aspect, this.logtags[_aspect],
+        ['\n\n=======================================================']);
+    else
+      this._log(_aspect || 'h2', {forceLog : true, color : 'inverse'},
         ['\n\n=======================================================']);
     // this.with({color : 'blue'});
     return this;
@@ -500,7 +507,11 @@ module.exports = class Logger {
    * @return {Logger}
    */
   h3(_aspect = null) {
-    this._log(_aspect || 'h3', {forceLog : (_aspect?false:true), color : 'inverse'},
+    if ( _aspect )
+      this._log(_aspect, this.logtags[_aspect],
+        ['\n-------------------------------------------------------']);
+    else
+    this._log(_aspect || 'h3', {forceLog : true, color : 'inverse'},
         ['\n-------------------------------------------------------']);
     // this.with({color : 'blue'});
     return this;

@@ -140,6 +140,18 @@ module.exports = class Logger {
     throw new Error(retval);
   }
 
+  /**
+   * Takes an error, prints it, and creates another with the given text.
+   * @param {Error} _err - error object to display before throwing a new error
+   * @param {*} theArgs - array of variables to print
+   */
+  rethrowError(_err, ...theArgs) {
+    let retval = this.with({outputTo : 'string', forceLog : true, debug : true})
+      ._log('ERROR', {}, theArgs);
+    console.log(_err);
+    throw new Error(retval);
+  }
+
 
   /**
    * User defined tags that can log when their values are defined and true.
@@ -459,37 +471,37 @@ module.exports = class Logger {
 
   /**
    * Heading with space, line of '*', in blue.
+   * @param {string} _aspect - aspect to use to determine if logging
    * @return {Logger}
    */
-  h1() {
+  h1(_aspect = null) {
 
-    console.log('\n\n\n');
-    this._log('h1', {forceLog : true, color : 'inverse'},
-        ['*******************************************************']);
+    this._log(_aspect || 'h1', {forceLog : (_aspect?false:true), color : 'inverse'},
+        ['\n\n\n*******************************************************']);
     // this.with({color : 'blue'});
     return this;
   }
 
   /**
    * Heading with space, line of '=', in blue.
+   * @param {string} _aspect - aspect to use to determine if logging
    * @return {Logger}
    */
-  h2() {
-    console.log('\n\n');
-    this._log('h2', {forceLog : true, color : 'inverse'},
-        ['=======================================================']);
+  h2(_aspect = null) {
+    this._log(_aspect || 'h2', {forceLog : (_aspect?false:true), color : 'inverse'},
+        ['\n\n=======================================================']);
     // this.with({color : 'blue'});
     return this;
   }
 
   /**
    * Heading with line of '-', in blue.
+   * @param {string} _aspect - aspect to use to determine if logging
    * @return {Logger}
    */
-  h3() {
-    console.log('\n');
-    this._log('h3', {forceLog : true, color : 'inverse'},
-        ['-------------------------------------------------------']);
+  h3(_aspect = null) {
+    this._log(_aspect || 'h3', {forceLog : (_aspect?false:true), color : 'inverse'},
+        ['\n-------------------------------------------------------']);
     // this.with({color : 'blue'});
     return this;
   }

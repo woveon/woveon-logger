@@ -186,6 +186,19 @@ module.exports = class Logger {
     }
   }
 
+
+  /**
+   * Returns true if aspect is set.
+   * @param {string} _tag - The aspect name.
+   * @return {bool} - true if aspect is set
+   */
+  testAspect(_tag) {
+    // if ( this.logtags[_tag] == null ) return false;
+    if ( this.logCheck(_tag, this.logtags[_tag]) == true) return true;
+    return false;
+  }
+
+
   /**
    * Call to add a tag to log directly to, or turn off.
    * NOTE: because this saves forceLog as false, instead of deleting tag, it retains settings between tag toggles
@@ -260,7 +273,7 @@ module.exports = class Logger {
     if ( typeof _key == 'object' ) newtemp = _key;
     else {newtemp = {}; newtemp[_key] = _val;}
     this.tempOptions = Object.assign({}, this.tempOptions, newtemp); // newtemp overwrite
-//    console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
+    console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
     return this;
   }
 
@@ -272,6 +285,8 @@ module.exports = class Logger {
    * @return {bool} true if log, false if not
    */
   logCheck(_lbl, _ops) {
+    if ( _ops == null ) return false;
+
     let retval = _ops.forceLog;
     if ( retval == false) {
       let curlevel = this.logLevels[_ops.level];
@@ -294,6 +309,7 @@ module.exports = class Logger {
 
     // compiled options for this logger call
     let calloptions = Object.assign({}, this.options, this.tempOptions, _options);
+    // console.log('add_to_stacklvl 1: ', calloptions, this.tempOptions);
     this.tempOptions = {};
 
     if ( this.logCheck(_lbl, calloptions) == false ) return retval;
@@ -311,6 +327,7 @@ module.exports = class Logger {
       for (; stacklvl < (__stack.length - 1); stacklvl++) {
         if (__stack[stacklvl].getFileName() != __filename) break;
       }
+      // console.log('add_to_stacklvl 2: ', stacklvl, calloptions.add_to_stacklvl, this.tempOptions);
       if ( calloptions.add_to_stacklvl ) stacklvl += calloptions.add_to_stacklvl;
       let fn = __stack[stacklvl].getFileName();
       let ln = __stack[stacklvl].getLineNumber();
@@ -359,7 +376,7 @@ module.exports = class Logger {
     this.tempOptions = {};
 
 //    try { throw new Error();} catch (e) { console.log(e); }
-//    console.log('stack: ', __stack);
+    // console.log('stack: ', JSON.stringify(__stack, null, '  '));
     let stacklvl = 2;
     for (; stacklvl < (__stack.length - 1); stacklvl++) {
       if (__stack[stacklvl].getFileName() != __filename) break;
@@ -474,13 +491,17 @@ module.exports = class Logger {
    * @param {string} _aspect - aspect to use to determine if logging
    * @return {Logger}
    */
-    h1(_aspect = null) {
-    if ( _aspect )
-      this._log(_aspect, this.logtags[_aspect],
-        ['\n\n\n*******************************************************']);
-    else
-      this._log('h1', {forceLog : true, color : 'inverse'},
-        ['\n\n\n*******************************************************']);
+  h1(_aspect = null) {
+    if ( _aspect ) {
+      this._log(_aspect, this.logtags[_aspect], ['']);
+      this._log(_aspect, this.logtags[_aspect], ['']);
+      this._log(_aspect, this.logtags[_aspect], ['*********************************************************************']);
+    } else {
+      this._log('h1', {forceLog : true, color : 'inverse'}, ['']);
+      this._log('h1', {forceLog : true, color : 'inverse'}, ['']);
+      this._log('h1', {forceLog : true, color : 'inverse'}, ['*********************************************************************']);
+    }
+
     return this;
 
   }
@@ -491,13 +512,13 @@ module.exports = class Logger {
    * @return {Logger}
    */
   h2(_aspect = null) {
-    if ( _aspect )
-      this._log(_aspect, this.logtags[_aspect],
-        ['\n\n=======================================================']);
-    else
-      this._log(_aspect || 'h2', {forceLog : true, color : 'inverse'},
-        ['\n\n=======================================================']);
-    // this.with({color : 'blue'});
+    if ( _aspect ) {
+      this._log(_aspect, this.logtags[_aspect], ['']);
+      this._log(_aspect, this.logtags[_aspect], ['=====================================================================']);
+    } else {
+      this._log(_aspect || 'h2', {forceLog : true, color : 'inverse'}, ['']);
+      this._log(_aspect || 'h2', {forceLog : true, color : 'inverse'}, ['=====================================================================']);
+    }
     return this;
   }
 
@@ -507,13 +528,13 @@ module.exports = class Logger {
    * @return {Logger}
    */
   h3(_aspect = null) {
-    if ( _aspect )
-      this._log(_aspect, this.logtags[_aspect],
-        ['\n-------------------------------------------------------']);
-    else
-    this._log(_aspect || 'h3', {forceLog : true, color : 'inverse'},
-        ['\n-------------------------------------------------------']);
-    // this.with({color : 'blue'});
+    if ( _aspect ) {
+      this._log(_aspect, this.logtags[_aspect], ['']);
+      this._log(_aspect, this.logtags[_aspect], ['-------------------------------------------------------']);
+    } else {
+      this._log(_aspect || 'h3', {forceLog : true, color : 'inverse'}, ['']);
+      this._log(_aspect || 'h3', {forceLog : true, color : 'inverse'}, ['-------------------------------------------------------']);
+    }
     return this;
   }
 

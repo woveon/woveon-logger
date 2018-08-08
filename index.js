@@ -273,7 +273,7 @@ module.exports = class Logger {
     if ( typeof _key == 'object' ) newtemp = _key;
     else {newtemp = {}; newtemp[_key] = _val;}
     this.tempOptions = Object.assign({}, this.tempOptions, newtemp); // newtemp overwrite
-    console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
+    // console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
     return this;
   }
 

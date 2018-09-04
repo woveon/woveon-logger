@@ -316,7 +316,6 @@ module.exports = class Logger {
     if ( this.logCheck(_lbl, calloptions) == false ) return retval;
 
     // add in checks to force debug
-    console.log('lbl : ', _lbl);
     if ( _lbl == 'ERROR' && calloptions.debugOnError == true ) calloptions.debug = true;
     if ( _lbl == 'WARN' && calloptions.debugOnWarn == true ) calloptions.debug = true;
 

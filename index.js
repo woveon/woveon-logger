@@ -40,6 +40,7 @@ module.exports = class Logger {
       level           : 'info',
       debug           : false,
       debugOnError    : true,
+      debugOnWarn     : true,
       timeSinceStart  : false,
       add_to_stacklvl : 0,       // debug shows in one stackframe above... useful for debugging function spew
       lblCharLen      : 7,
@@ -122,8 +123,8 @@ module.exports = class Logger {
    * @return {*} - string if outputTo is true, null otherwise
    */
   info(...theArgs)    {return this._log('INFO',    {}, theArgs);};
-  warn(...theArgs)    {return this._log('WARN',    {debug : true}, theArgs);};
-  error(...theArgs)   {return this._log('ERROR',   {debug : true}, theArgs);};
+  warn(...theArgs)    {return this._log('WARN',    {}, theArgs);};
+  error(...theArgs)   {return this._log('ERROR',   {}, theArgs);};
   verbose(...theArgs) {return this._log('VERBOSE', {}, theArgs);};
   trace(...theArgs)   {return this._log('TRACE',   {}, theArgs);};
   debug(...theArgs)   {return this._log('DEBUG',   {}, theArgs);};
@@ -314,6 +315,11 @@ module.exports = class Logger {
 
     if ( this.logCheck(_lbl, calloptions) == false ) return retval;
 
+    // add in checks to force debug
+    console.log('lbl : ', _lbl);
+    if ( _lbl == 'ERROR' && calloptions.debugOnError == true ) calloptions.debug = true;
+    if ( _lbl == 'WARN' && calloptions.debugOnWarn == true ) calloptions.debug = true;
+
     let ts = null;
     // timestamped information (debug is since start)
     if ( calloptions.timeSinceStart == true ) {
@@ -456,10 +462,13 @@ module.exports = class Logger {
    * @return {string} - shorted filepath
    */
   trimpath(_fnfile, _trimto, _dotit = false) {
-    let c = Math.min(_fnfile.length, _trimto.length);
-    let br = 0;
-    for (let i=0; i<c; i++) {if ( _fnfile[i] == '/' ) br = i+1; if ( _fnfile[i] != _trimto[i] ) break;}
-    let retval = _fnfile.substring(br);
+    let retval = _fnfile;
+    if ( _fnfile != null && _trimto != null ) {
+      let c = Math.min(_fnfile.length, _trimto.length);
+      let br = 0;
+      for (let i=0; i<c; i++) {if ( _fnfile[i] == '/' ) br = i+1; if ( _fnfile[i] != _trimto[i] ) break;}
+      retval = _fnfile.substring(br);
+    }
     return retval;
   };
 

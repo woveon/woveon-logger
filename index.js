@@ -6,7 +6,7 @@ const esArgs  = require('es-arguments');
 
 if ( typeof __line === 'undefined' ) {
   Object.defineProperty(global, '__line', {
-    get : () => {return __stack[1].getLineNumber();},
+    get : () => { return __stack[1].getLineNumber(); },
   });
 }
 
@@ -14,7 +14,7 @@ if ( typeof __stack === 'undefined' ) {
 Object.defineProperty(global, '__stack', {
   get : (...theArgs) => {
     let orig = Error.prepareStackTrace;
-    Error.prepareStackTrace = (_, stack) => {return stack;};
+    Error.prepareStackTrace = (_, stack) => { return stack; };
     let err = new Error;
     Error.captureStackTrace(err, theArgs.callee);
     let stack = err.stack;
@@ -91,9 +91,10 @@ module.exports = class Logger {
     try {
       if ( env != null ) {
         let allops = JSON.parse(env);
-        if ( allops[this.name] != null ) {retval = allops[this.name];}
+        if ( allops[this.name] != null ) { retval = allops[this.name]; }
       }
-    } catch (err) {
+    }
+    catch (err) {
       console.log('WARNING: woveon-logger: WOV_LOGGER_OPS env variable not valid JSON: Not incorporating WOV_LOGGER_OPS.');
     }
     return retval;
@@ -101,18 +102,23 @@ module.exports = class Logger {
 
 
   /**
-   * Parse the WOV_LOGGER_ASEPCTS env variable and assign them as aspects.
+   * Parse the WOV_LOGGER_ASEPCTS/WOV_LA env variables and assign them as aspects.
    */
   readEnvAspects() {
+    let aspects = [];
     if ( process.env.WOV_LOGGER_ASPECTS != null ) {
-      let aspects = process.env.WOV_LOGGER_ASPECTS.split(/\s+/);
-      for (let i=0; i<aspects.length; i++) {
-        let a = aspects[i];
-        if ( a == '' ) break;
-        let aval = true;
-        if ( a[0] == '!' ) {aval = false; a = a.substr(1);}
-        this.setAspect(a, aval);
-      }
+      aspects = aspects.concat(process.env.WOV_LOGGER_ASPECTS.split(/\s+/));
+    }
+    if ( process.env.WOV_LA != null ) {
+      aspects = aspects.concat(process.env.WOV_LA.split(/\s+/));
+    }
+
+    for (let i=0; i<aspects.length; i++) {
+      let a = aspects[i];
+      if ( a == '' ) break;
+      let aval = true;
+      if ( a[0] == '!' ) { aval = false; a = a.substr(1); }
+      this.setAspect(a, aval);
     }
   }
 
@@ -122,13 +128,13 @@ module.exports = class Logger {
    * @param {*} theArgs - array of variables to print
    * @return {*} - string if outputTo is true, null otherwise
    */
-  info(...theArgs)    {return this._log('INFO',    {}, theArgs);};
-  warn(...theArgs)    {return this._log('WARN',    {}, theArgs);};
-  error(...theArgs)   {return this._log('ERROR',   {}, theArgs);};
-  verbose(...theArgs) {return this._log('VERBOSE', {}, theArgs);};
-  trace(...theArgs)   {return this._log('TRACE',   {}, theArgs);};
-  debug(...theArgs)   {return this._log('DEBUG',   {}, theArgs);};
-  silly(...theArgs)   {return this._log('SILLY',   {}, theArgs);};
+  info(...theArgs)    { return this._log('INFO',    {}, theArgs); };
+  warn(...theArgs)    { return this._log('WARN',    {}, theArgs); };
+  error(...theArgs)   { return this._log('ERROR',   {}, theArgs); };
+  verbose(...theArgs) { return this._log('VERBOSE', {}, theArgs); };
+  trace(...theArgs)   { return this._log('TRACE',   {}, theArgs); };
+  debug(...theArgs)   { return this._log('DEBUG',   {}, theArgs); };
+  silly(...theArgs)   { return this._log('SILLY',   {}, theArgs); };
 
 
   /**
@@ -210,21 +216,22 @@ module.exports = class Logger {
     if ( _val == false ) {
       if ( this.logtags[_tag] == null ) this.logtags[_tag] = {};
       this.logtags[_tag].forceLog = false;
-    } else {
+    }
+    else {
       let tagops = null;
       if ( typeof _val == 'object' ) {
         tagops = Object.assign({forceLog : true}, _val); // note that forceLog can be undone
-      } else if ( _val == true ) {
+      }
+      else if ( _val == true ) {
         tagops = this.logtags[_tag] || {}; // grab existing entry if it exists
         tagops.forceLog = true;
-      } else {
-        throw new Error(`Unknown logger tag(${_tag}) value: ${_val}.`);
       }
+      else { throw new Error(`Unknown logger tag(${_tag}) value: ${_val}.`); }
       this.logtags[_tag] = tagops;
     }
   }
   /** phase out */
-  setLogTag(_tag, _val = {}) {this.logDeprecated('woveon-logger: method setLogTag should use setAspect'); this.setAspect(_tag, _val);}
+  setLogTag(_tag, _val = {}) { this.logDeprecated('woveon-logger: method setLogTag should use setAspect'); this.setAspect(_tag, _val); }
 
 
   /**
@@ -232,7 +239,7 @@ module.exports = class Logger {
    * @param {strings} theArgs - msgs to print after main message.
    * @return {object} this
    */
-  logDeprecated(...theArgs) {return this.with('debug', true).aspect('deprecated', `DEPRECATED: should avoid this call.`, theArgs);}
+  logDeprecated(...theArgs) { return this.with('debug', true).aspect('deprecated', `DEPRECATED: should avoid this call.`, theArgs); }
 
   /**
    * Helper function to set an option.
@@ -242,9 +249,8 @@ module.exports = class Logger {
    * @return {this} -
    */
   set(_key, _val, _throw = true) {
-    if ( _key in this.defaultOptions ) {
-      this.options[_key] = _val;
-    } else if ( _throw == true ) {
+    if ( _key in this.defaultOptions ) { this.options[_key] = _val; }
+    else if ( _throw == true ) {
       throw new Error(`Logger trying to set unknown option '${_key}'.`);
     }
     return this;
@@ -259,7 +265,7 @@ module.exports = class Logger {
    * @param {bool} _throw - if true, throws exception on bad key
    * @return {this} -
    */
-  lvl(_val, _throw = true) {return this.set('level', _val, _throw);}
+  lvl(_val, _throw = true) { return this.set('level', _val, _throw); }
 
 
   /**
@@ -272,7 +278,7 @@ module.exports = class Logger {
   with(_key, _val, _throw = true) {
     let newtemp = null;
     if ( typeof _key == 'object' ) newtemp = _key;
-    else {newtemp = {}; newtemp[_key] = _val;}
+    else { newtemp = {}; newtemp[_key] = _val; }
     this.tempOptions = Object.assign({}, this.tempOptions, newtemp); // newtemp overwrite
     // console.log(`tempOptions ${JSON.stringify(newtemp)} : ${JSON.stringify(this.tempOptions)} from ${_key}, ${_val}.`);
     return this;
@@ -323,7 +329,8 @@ module.exports = class Logger {
     // timestamped information (debug is since start)
     if ( calloptions.timeSinceStart == true ) {
         ts = sprintf('%8.3f', (Date.now() - this.private.starttime)/1000.0);
-    } else {ts = new Date().toISOString();}
+    }
+    else { ts = new Date().toISOString(); }
 
     // debugging tracing information
     let db = '';
@@ -340,12 +347,13 @@ module.exports = class Logger {
       let len = calloptions.dbCharLen;
       if (p.length > len) {
         db = ` [${p.slice(-len + 0)}]`;
-      } else db = ' [' + sprintf('%-' + len + 's', p) + ']';
+      }
+      else { db = ' [' + sprintf('%-' + len + 's', p) + ']'; }
     }
 
     // The name of this logger
     let showname = '';
-    if ( calloptions.showName ) {showname = ` [${this.name}]`;}
+    if ( calloptions.showName ) { showname = ` [${this.name}]`; }
 
     // For each arg, add to a new line
     let colorizer = this.getColorizer(_lbl, calloptions.color, calloptions.colors);
@@ -414,10 +422,9 @@ module.exports = class Logger {
   getColorizer(_lbl, _color, _colors) {
     let retval = null;
     let colorstring = _color || _colors[_lbl.toLowerCase()];
-    if ( colorstring == null ) {colorstring = _colors.default;}
-    if ( colorstring == 'none' ) {
-      retval = (_str) => {return _str;};
-    } else {
+    if ( colorstring == null ) { colorstring = _colors.default; }
+    if ( colorstring == 'none' ) { retval = (_str) => { return _str; }; }
+    else {
 
       let cs = colorstring.split(' ');
       if ( cs.length == 1 ) retval = colors[colorstring];
@@ -465,7 +472,10 @@ module.exports = class Logger {
     if ( _fnfile != null && _trimto != null ) {
       let c = Math.min(_fnfile.length, _trimto.length);
       let br = 0;
-      for (let i=0; i<c; i++) {if ( _fnfile[i] == '/' ) br = i+1; if ( _fnfile[i] != _trimto[i] ) break;}
+      for (let i=0; i<c; i++) {
+        if ( _fnfile[i] == '/' ) br = i+1;
+        if ( _fnfile[i] != _trimto[i] ) break;
+      }
       retval = _fnfile.substring(br);
     }
     return retval;
@@ -504,7 +514,8 @@ module.exports = class Logger {
       this._log(_aspect, this.logtags[_aspect], ['']);
       this._log(_aspect, this.logtags[_aspect], ['']);
       this._log(_aspect, this.logtags[_aspect], ['*********************************************************************']);
-    } else {
+    }
+    else {
       this._log('h1', {forceLog : true, color : 'inverse'}, ['']);
       this._log('h1', {forceLog : true, color : 'inverse'}, ['']);
       this._log('h1', {forceLog : true, color : 'inverse'}, ['*********************************************************************']);
@@ -523,7 +534,8 @@ module.exports = class Logger {
     if ( _aspect ) {
       this._log(_aspect, this.logtags[_aspect], ['']);
       this._log(_aspect, this.logtags[_aspect], ['=====================================================================']);
-    } else {
+    }
+    else {
       this._log(_aspect || 'h2', {forceLog : true, color : 'inverse'}, ['']);
       this._log(_aspect || 'h2', {forceLog : true, color : 'inverse'}, ['=====================================================================']);
     }
@@ -539,7 +551,8 @@ module.exports = class Logger {
     if ( _aspect ) {
       this._log(_aspect, this.logtags[_aspect], ['']);
       this._log(_aspect, this.logtags[_aspect], ['-------------------------------------------------------']);
-    } else {
+    }
+    else {
       this._log(_aspect || 'h3', {forceLog : true, color : 'inverse'}, ['']);
       this._log(_aspect || 'h3', {forceLog : true, color : 'inverse'}, ['-------------------------------------------------------']);
     }
@@ -552,12 +565,12 @@ module.exports = class Logger {
    * @param {func} _func - The function/arrowfunc or method to be wrapped.
    * @return {func}
    */
-  wrapFunc(_func, ...initArgs)             {return this._wrapFunc(null, _func, false, initArgs);}
-  wrapAFunc(_func, ...initArgs)            {return this._wrapFunc(null, _func, true,  initArgs);}
-  wrapBoundFunc(_obj, _func, ...initArgs)  {return this._wrapFunc(_obj, _func, false, initArgs);}
-  wrapABoundFunc(_obj, _func, ...initArgs) {return this._wrapFunc(_obj, _func, true,  initArgs);}
-  wrapMethod(_obj, _meth, ...initArgs)     {return this._wrapFunc(_obj, _meth, false, initArgs);}
-  wrapAMethod(_obj, _meth, ...initArgs)    {return this._wrapFunc(_obj, _meth, true,  initArgs);}
+  wrapFunc(_func, ...initArgs)             { return this._wrapFunc(null, _func, false, initArgs); }
+  wrapAFunc(_func, ...initArgs)            { return this._wrapFunc(null, _func, true,  initArgs); }
+  wrapBoundFunc(_obj, _func, ...initArgs)  { return this._wrapFunc(_obj, _func, false, initArgs); }
+  wrapABoundFunc(_obj, _func, ...initArgs) { return this._wrapFunc(_obj, _func, true,  initArgs); }
+  wrapMethod(_obj, _meth, ...initArgs)     { return this._wrapFunc(_obj, _meth, false, initArgs); }
+  wrapAMethod(_obj, _meth, ...initArgs)    { return this._wrapFunc(_obj, _meth, true,  initArgs); }
 
   /**
     * Don't use this. Created as temporary function for my own code.
@@ -586,19 +599,18 @@ module.exports = class Logger {
     let eargs=null;
     try {
       eargs = esArgs(_func);
-    } catch (e) {
+    }
+    catch (e) {
       let s = _func.toString();
       let firstword = s.substr(0, s.indexOf(' '));
-      if ( firstword == 'async' ) {
-        s = 'async function ' + s.substr(s.indexOf(' ')); // add async function to removed 'async' of function
-      } else {
-        s = 'function ' + s; // just add function
-      }
+      if ( firstword == 'async' ) { s = 'async function ' + s.substr(s.indexOf(' ')); } // add async function to removed 'async' of function
+      else { s = 'function ' + s; } // just add function
       // console.log('trying agin with h: ', s);
       try {
         eargs = esArgs(s);
         ismethod = true;
-      } catch (e) {console.log(e);}
+      }
+      catch (e) { console.log(e); }
     }
 
     if ( ! _isAsync ) {
@@ -606,19 +618,20 @@ module.exports = class Logger {
         let rr = null;
         l.info('function ', initArgs);
         let pn = Math.max(args.length, eargs.length);
-        for (let i=0; i<pn; i++ ) {l.info(`  ${eargs[i]} = ${args[i]}`);}
-        if ( ! ismethod ) rr = _func(...args);
-        else {rr = _func.bind(_binding)(...args);}
+        for (let i=0; i<pn; i++ ) { l.info(`  ${eargs[i]} = ${args[i]}`); }
+        if ( ! ismethod ) { rr = _func(...args); }
+        else { rr = _func.bind(_binding)(...args); }
         return rr;
       };
-    } else {
+    }
+    else {
       retval = async function(...args) {
         let rr = null;
         l.info('function ', initArgs);
         let pn = Math.max(args.length, eargs.length);
-        for (let i=0; i<pn; i++ ) {l.info(`  ${eargs[i]} = ${args[i]}`);}
+        for (let i=0; i<pn; i++ ) { l.info(`  ${eargs[i]} = ${args[i]}`); }
         if ( ! ismethod ) rr = await _func(...args);
-        else {rr = await _func.bind(_binding)(...args);}
+        else { rr = await _func.bind(_binding)(...args); }
         return rr;
       };
     }

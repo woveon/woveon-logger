@@ -639,6 +639,39 @@ class Logger {
     return retval;
   }
 
+
+  /*
+  static gInfo(...args) {
+    if ( Logger._glogger == null ) { Logger._GenGLogger(); }
+    Logger._glogger.info.apply(Logger._glogger, args);
+  }
+
+  static gAspect(...args) {
+    if ( Logger._glogger == null ) { Logger._GenGLogger(); }
+    Logger._glogger.aspect.apply(Logger._glogger, args);
+  }
+  static gSetAspect(...args) {
+    if ( Logger._glogger == null ) { Logger._GenGLogger(); }
+    Logger._glogger.setAspect.apply(Logger._glogger, args);
+  }
+  */
+
+
+  /**
+   * This returns (creates as needed) a global logger. This is handy when you don't really care, you just want
+   * to display a message:  `Logger.g().info('hello world');`
+   *
+   * The global logger runs in debug mode and grabs the global env settings.
+   *   NOTE: if you use setApect or change settings, those remain for all other global calls!
+   *
+   * @return {Logger} - the global logger is returned, created if needed
+   */
+  static g() {
+    if ( Logger._glogger == null ) { Logger._glogger = new Logger('', {debug : true}, {}); }
+    return Logger._glogger;
+  }
+
 };
+Logger._glogger = null;
 
 module.exports = Logger;

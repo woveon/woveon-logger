@@ -25,7 +25,7 @@ Object.defineProperty(global, '__stack', {
 }
 
 
-module.exports = class Logger {
+class Logger {
 
   /**
    * A custom logger.
@@ -641,3 +641,4 @@ module.exports = class Logger {
 
 };
 
+module.exports = Logger;

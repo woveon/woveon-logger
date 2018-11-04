@@ -2,7 +2,7 @@
 
 const sprintf = require('sprintf-js').sprintf;
 const colors  = require('colors/safe');
-const esArgs  = require('es-arguments');
+const rArgs   = require('reflect-args').getArgs;
 
 if ( typeof __line === 'undefined' ) {
   Object.defineProperty(global, '__line', {
@@ -25,6 +25,8 @@ Object.defineProperty(global, '__stack', {
 }
 
 
+/**
+ */
 class Logger {
 
   /**
@@ -595,19 +597,32 @@ class Logger {
     let l = this;
     let ismethod = false;
     let retval = null;
+    let funcname = _func.name;
 
-    let eargs=null;
+    l.aspect('wrapfunc.init', 'func: ', _func);
+
+    // let eargs=null;
+    let gargs = null;
     try {
-      eargs = esArgs(_func);
+      gargs = Array.from(rArgs(_func)); // .entries();
     }
     catch (e) {
       let s = _func.toString();
       let firstword = s.substr(0, s.indexOf(' '));
+      while (firstword.indexOf('(') == -1) { // != 'function' && firstword != null ) {
+        s = s.substr(s.indexOf(' ')).trimLeft();
+        l.aspect('wrapfunc.init', 'removing first word: ', firstword, s);
+        firstword = s.substr(0, s.indexOf(' '));
+        l.aspect('wrapfunc.init', `  next first word: '${firstword}'`);
+      }
+      s = 'function ' + s; // add 'function' on it as rArgs has issues parsing
+      /*
       if ( firstword == 'async' ) { s = 'async function ' + s.substr(s.indexOf(' ')); } // add async function to removed 'async' of function
       else { s = 'function ' + s; } // just add function
+      */
       // console.log('trying agin with h: ', s);
       try {
-        eargs = esArgs(s);
+        gargs = rArgs(s);
         ismethod = true;
       }
       catch (e) { console.log(e); }
@@ -616,9 +631,16 @@ class Logger {
     if ( ! _isAsync ) {
       retval = function(...args) {
         let rr = null;
-        l.info('function ', initArgs);
-        let pn = Math.max(args.length, eargs.length);
-        for (let i=0; i<pn; i++ ) { l.info(`  ${eargs[i]} = ${args[i]}`); }
+        l.aspect('wrapfunc', 'args : ', args);
+        l.aspect('wrapfunc', 'gargs: ', gargs);
+        let pn = Math.max(args.length, gargs.length);
+        let argstring = '';
+        for (let i=0; i<pn; i++ ) {
+          let p = (args[i] === undefined)? gargs[i][1]: args[i];
+          if ( argstring != '' ) argstring += ', ';
+          argstring += `${p}`;
+        }
+        l.info(`${initArgs}: function ${funcname}(${argstring})`);
         if ( ! ismethod ) { rr = _func(...args); }
         else { rr = _func.bind(_binding)(...args); }
         return rr;
@@ -627,9 +649,17 @@ class Logger {
     else {
       retval = async function(...args) {
         let rr = null;
-        l.info('function ', initArgs);
-        let pn = Math.max(args.length, eargs.length);
-        for (let i=0; i<pn; i++ ) { l.info(`  ${eargs[i]} = ${args[i]}`); }
+        l.aspect('wrapfunc', 'args : ', args);
+        l.aspect('wrapfunc', 'gargs: ', gargs);
+        let pn = Math.max(args.length, gargs.length);
+        let argstring = '';
+        for (let i=0; i<pn; i++ ) {
+          // console.log(`g ${i} `, gargs[i]);
+          let p = (args[i] === undefined)? (gargs[i]?gargs[i][1]:gargs[i]): args[i];
+          if ( argstring != '' ) argstring += ', ';
+          argstring += `${p}`;
+        }
+        l.info(`${initArgs}: async function ${funcname}(${argstring})`);
         if ( ! ismethod ) rr = await _func(...args);
         else { rr = await _func.bind(_binding)(...args); }
         return rr;

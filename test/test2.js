@@ -88,9 +88,11 @@ describe(`${mtag}: Wrap function`, () => {
 
 
     let a = new A('y', 'z');
+    console.log('asdfdf: ', a.Aa1, 7);
     a.f3 = logger.wrapMethod(a, a.f3, 'wrapped class A\'s method function f3');
     a.f3(7, 8, 9);
     // console.log(' a\'s data sohuld be changed:', a.Aa1, a.Ab1);
+    console.log('asdfdf: ', a.Aa1, 7);
     should.equal(a.Aa1, 7);
     should.equal(a.Ab1, 8);
     // console('calling a second time');

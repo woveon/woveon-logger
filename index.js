@@ -84,6 +84,19 @@ class Logger {
 
 
   /**
+   * Prints the aspects to the console.
+   */
+  displayAspects() { console.log(this.logtags); }
+
+
+  /**
+   * Returns a copy of the aspects.
+   * @return {object} - copy of this.logtags
+   */
+  getAspects() { return Object.assign({}, this.logtags); }
+
+
+  /**
    * Read WOV_LOGGER_OPS env variable and overrite all current options.
    * @return {object} - parsed result of WOV_LOGGER_OPS
    */

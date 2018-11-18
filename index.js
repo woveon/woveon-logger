@@ -130,7 +130,7 @@ class Logger {
 
     for (let i=0; i<aspects.length; i++) {
       let a = aspects[i];
-      if ( a == '' ) break;
+      if ( a == '' ) continue;
       let aval = true;
       if ( a[0] == '!' ) { aval = false; a = a.substr(1); }
       this.setAspect(a, aval);

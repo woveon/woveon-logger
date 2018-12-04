@@ -1,6 +1,6 @@
 {
   "name": "woveon-logger",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "A logging toolkit with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.",
   "main": "index.js",
   "scripts": {

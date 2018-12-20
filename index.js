@@ -56,13 +56,15 @@ class Logger {
     this.tempOptions = {};
 
     this.logLevels = {
-      error   : 0,
-      warn    : 1,
-      info    : 2,
-      verbose : 3,
-      trace   : 4,
-      debug   : 5,
-      silly   : 6,
+      doom    : 0,
+      fatal   : 1,
+      error   : 2,
+      warn    : 3,
+      info    : 4,
+      verbose : 5,
+      trace   : 6,
+      debug   : 7,
+      silly   : 8,
     };
 
     // et logtags (i.e. aspects)
@@ -81,6 +83,88 @@ class Logger {
       starttime : Date.now(),
     };
   };
+
+
+  /**
+   * Standard logging messages.
+   * @param {*} theArgs - array of variables to print
+   * @return {*} - string if outputTo is true, null otherwise
+   */
+  silly(...theArgs)   { return this._log('SILLY',   {}, theArgs); }; // don't use this
+  trace(...theArgs)   { return this._log('TRACE',   {}, theArgs); }; // debug a very targeted section because raw data is showing
+  debug(...theArgs)   { return this._log('DEBUG',   {}, theArgs); }; // spew lots of state information for debugging
+  verbose(...theArgs) { return this._log('VERBOSE', {}, theArgs); }; // good if you are analyzing code
+  info(...theArgs)    { return this._log('INFO',    {}, theArgs); }; // things good to know
+  warn(...theArgs)    { return this._log('WARN',    {}, theArgs); }; // probably should fix/monitor something in future
+  error(...theArgs)   { return this._log('ERROR',   {}, theArgs); }; // something failed and you need to fix in future; recovering
+  fatal(...theArgs)   { return this._log('FATAL',   {}, theArgs); }; // pick up the phone and call the engineer
+  doom(...theArgs)    { return this._log('DOOM',    {}, theArgs); }; // pick up the phone and call the engineer and CEO
+
+
+  /**
+   * Aspect level debuggin. Same as log above, but the idea is to think of an aspect (as in
+   * Aspect Oriented Programming, a cross-cutting concern) to log. If that aspect is
+   * activated, then log this message.
+   *
+   * @param {string} _tag
+   * @param {*} theArgs
+   * @return {bool} true on success
+   */
+  aspect(_tag, ...theArgs) {
+    if ( this.logtags[_tag] != null ) {
+      return this._log(_tag, this.logtags[_tag], theArgs );
+    }
+  }
+
+
+  /**
+   * Call to control aspect activation on or off.
+   * NOTE: because this saves forceLog as false, instead of deleting tag, it retains settings between tag toggles
+   *
+   * @param {string} _tag
+   * @param {*} _val - options for the logger or false to turn off (and retain values)
+   */
+  setAspect(_tag, _val = {}) {
+    if ( _val == false ) {
+      if ( this.logtags[_tag] == null ) this.logtags[_tag] = {};
+      this.logtags[_tag].forceLog = false;
+    }
+    else {
+      let tagops = null;
+      if ( typeof _val == 'object' ) {
+        tagops = Object.assign({forceLog : true}, _val); // note that forceLog can be undone
+      }
+      else if ( _val == true ) {
+        tagops = this.logtags[_tag] || {}; // grab existing entry if it exists
+        tagops.forceLog = true;
+      }
+      else { throw new Error(`Unknown logger tag(${_tag}) value: ${_val}.`); }
+      this.logtags[_tag] = tagops;
+    }
+  }
+
+
+  /**
+   * Throw an actual Error, not just show as error.
+   * @param {*} theArgs - array of variables to print
+   */
+  throwError(...theArgs) {
+    let retval = this.with({outputTo : 'string', forceLog : true, debug : true})
+      ._log('ERROR', {}, theArgs);
+    throw new Error(retval);
+  }
+
+  /**
+   * Takes an error, prints it, and creates another with the given text.
+   * @param {Error} _err - error object to display before throwing a new error
+   * @param {*} theArgs - array of variables to print
+   */
+  rethrowError(_err, ...theArgs) {
+    let retval = this.with({outputTo : 'string', forceLog : true, debug : true})
+      ._log('ERROR', {}, theArgs);
+    console.log(_err);
+    throw new Error(retval);
+  }
 
 
   /**
@@ -139,43 +223,6 @@ class Logger {
 
 
   /**
-   * Standard logging messages.
-   * @param {*} theArgs - array of variables to print
-   * @return {*} - string if outputTo is true, null otherwise
-   */
-  info(...theArgs)    { return this._log('INFO',    {}, theArgs); };
-  warn(...theArgs)    { return this._log('WARN',    {}, theArgs); };
-  error(...theArgs)   { return this._log('ERROR',   {}, theArgs); };
-  verbose(...theArgs) { return this._log('VERBOSE', {}, theArgs); };
-  trace(...theArgs)   { return this._log('TRACE',   {}, theArgs); };
-  debug(...theArgs)   { return this._log('DEBUG',   {}, theArgs); };
-  silly(...theArgs)   { return this._log('SILLY',   {}, theArgs); };
-
-
-  /**
-   * Throw an actual Error, not just show as error.
-   * @param {*} theArgs - array of variables to print
-   */
-  throwError(...theArgs) {
-    let retval = this.with({outputTo : 'string', forceLog : true, debug : true})
-      ._log('ERROR', {}, theArgs);
-    throw new Error(retval);
-  }
-
-  /**
-   * Takes an error, prints it, and creates another with the given text.
-   * @param {Error} _err - error object to display before throwing a new error
-   * @param {*} theArgs - array of variables to print
-   */
-  rethrowError(_err, ...theArgs) {
-    let retval = this.with({outputTo : 'string', forceLog : true, debug : true})
-      ._log('ERROR', {}, theArgs);
-    console.log(_err);
-    throw new Error(retval);
-  }
-
-
-  /**
    * User defined tags that can log when their values are defined and true.
    * ```
    *  logger.setAspect('A',false);
@@ -194,20 +241,6 @@ class Logger {
     }
   }
 
-  /**
-   * Same as log above. The idea is to think of an aspect (as in
-   * Aspect Oriented Programming, a cross-cutting concern) to log.
-   *
-   * @param {string} _tag
-   * @param {*} theArgs
-   * @return {bool} true on success
-   */
-  aspect(_tag, ...theArgs) {
-    if ( this.logtags[_tag] != null ) {
-      return this._log(_tag, this.logtags[_tag], theArgs );
-    }
-  }
-
 
   /**
    * Returns true if aspect is set.
@@ -221,30 +254,6 @@ class Logger {
   }
 
 
-  /**
-   * Call to add a tag to log directly to, or turn off.
-   * NOTE: because this saves forceLog as false, instead of deleting tag, it retains settings between tag toggles
-   * @param {string} _tag
-   * @param {*} _val - options for the logger or false to turn off (and retain values)
-   */
-  setAspect(_tag, _val = {}) {
-    if ( _val == false ) {
-      if ( this.logtags[_tag] == null ) this.logtags[_tag] = {};
-      this.logtags[_tag].forceLog = false;
-    }
-    else {
-      let tagops = null;
-      if ( typeof _val == 'object' ) {
-        tagops = Object.assign({forceLog : true}, _val); // note that forceLog can be undone
-      }
-      else if ( _val == true ) {
-        tagops = this.logtags[_tag] || {}; // grab existing entry if it exists
-        tagops.forceLog = true;
-      }
-      else { throw new Error(`Unknown logger tag(${_tag}) value: ${_val}.`); }
-      this.logtags[_tag] = tagops;
-    }
-  }
   /** phase out */
   setLogTag(_tag, _val = {}) { this.logDeprecated('woveon-logger: method setLogTag should use setAspect'); this.setAspect(_tag, _val); }
 
@@ -255,6 +264,7 @@ class Logger {
    * @return {object} this
    */
   logDeprecated(...theArgs) { return this.with('debug', true).aspect('deprecated', `DEPRECATED: should avoid this call.`, theArgs); }
+
 
   /**
    * Helper function to set an option.

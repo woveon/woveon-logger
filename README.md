@@ -4,6 +4,8 @@
 
 [NPM Location](https://www.npmjs.com/package/woveon-logger)
 
+## Woveon is an enterprise conversation management software. Using AI and machine learning, it helps businesses take control of their conversations - to provide exceptional customer experience, audit for compliance, and maximize revenue.
+
 ## Sample output
 
 I inlined the javascript that generated this output.

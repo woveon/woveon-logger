@@ -254,6 +254,33 @@ class Logger {
   }
 
 
+  /**
+   * Runs the function _f if aspect is true.
+   *
+   * @param {string}   _aspect - The aspect name.
+   * @param {function} _f      - The function to call, with this logger being passed in.
+   * @return {?}               - returns the function return value, false if aspect fails
+   */
+  onAspect(_aspect, _f) {
+    if ( this.logCheck(_aspect, this.logtags[_aspect]) == true) { return _f(this); }
+    return false;
+  }
+
+
+  /**
+   * Returns the ordinal for a number: i.e. for 1, 2, 3, 'st', 'nd', 'rd'
+   * from: https://stackoverflow.com/a/31615643/2664702
+   * @param {int} _n  - a number
+   * @return {String} - ordinal
+   */
+  indexOrdinal(_n) { return this.ord(_n); }
+  ord(_n) {
+    let s=['th', 'st', 'nd', 'rd'];
+    let v=_n%100;
+    return _n+(s[(v-20)%10]||s[v]||s[0]);
+  }
+
+
   /** phase out */
   setLogTag(_tag, _val = {}) { this.logDeprecated('woveon-logger: method setLogTag should use setAspect'); this.setAspect(_tag, _val); }
 

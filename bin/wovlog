@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+VERBOSE=1
+
+if [ "$1" == "-q" ]; then VERBOSE=0; shift; fi
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+  printf "\n"
+  printf "usage : wovlog [-q][-h] CMD\n"
+  printf " : manages the WOV_LA env variable\n"
+  printf "\n"
+  printf "  a|add X        - add X\n"
+  printf "  r|rem|remove X - remove X\n"
+  printf "  p|pop          - pop the last item\n"
+  printf "  clear          - set to ''\n"
+  printf "\n"
+  printf "\n"
+else
+
+if [ "$1" == "add" ] || [ "$1" == "a" ]; then
+  export WOV_LA="${WOV_LA} $2"
+elif [ "$1" == "remove" ] || [ "$1" == "r" ] || [ "$1" == "rem" ]; then
+  IFS=', ' read -r -a W <<< "${WOV_LA}"
+
+  #echo "W: ${W[@]}"
+  #set -x
+  NEWW=
+  arraylength=${#W[@]}
+  #echo "array lenght ${arraylength}"
+
+  for (( i=0; i<${arraylength}+1; i++ ));
+  do
+    entry=${W[$i]}
+    #echo "entry ${entry}"
+    if [ "${entry}" != "$2" ]; then
+      NEWW+=" ${entry}"
+    fi
+  done
+
+  export WOV_LA="${NEWW}"
+
+elif [ "$1" == "p" ] || [ "$1" == "pop" ]; then
+  IFS=', ' read -r -a W <<< "${WOV_LA}"
+  WW=( "${W[@]:0:(( ${#W[@]} - 1 ))}" )
+  export WOV_LA="${WW[@]}"
+elif [ "$1" == "clear" ]; then
+  export WOV_LA=""
+fi
+
+
+if [ "$VERBOSE" == "1" ]; then
+  echo ${WOV_LA}
+fi
+
+fi

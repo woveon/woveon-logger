@@ -3,6 +3,8 @@
 const sprintf = require('sprintf-js').sprintf;
 const colors  = require('colors/safe');
 const rArgs   = require('reflect-args').getArgs;
+const performance = require('perf_hooks').performance;
+const AsyncFunction = Object.getPrototypeOf(async function() {}).constructor;
 
 if ( typeof __line === 'undefined' ) {
   Object.defineProperty(global, '__line', {
@@ -106,13 +108,19 @@ class Logger {
    * Aspect Oriented Programming, a cross-cutting concern) to log. If that aspect is
    * activated, then log this message.
    *
+   * Aspects can be space separated so logger.aspect('A B', 'hi') will trigger on 'A' or 'B'. It only prints
+   * once though, and uses the first matching aspect's options (but will show full 'A B' label.
+   *
    * @param {string} _tag
    * @param {*} theArgs
    * @return {bool} true on success
    */
   aspect(_tag, ...theArgs) {
-    if ( this.logtags[_tag] != null ) {
-      return this._log(_tag, this.logtags[_tag], theArgs );
+    let tags = _tag.split(' ');
+    for (let i=0; i<tags.length; i++) {
+      if ( this.logtags[tags[i]] != null ) {
+        return this._log(_tag, this.logtags[tags[i]], theArgs );
+      }
     }
   }
 
@@ -261,7 +269,7 @@ class Logger {
    * @param {function} _f      - The function to call, with this logger being passed in.
    * @return {?}               - returns the function return value, false if aspect fails
    */
-  onAspect(_aspect, _f) {
+  async onAspect(_aspect, _f) {
     if ( this.logCheck(_aspect, this.logtags[_aspect]) == true) { return _f(this); }
     return false;
   }
@@ -393,6 +401,7 @@ class Logger {
       }
       // console.log('add_to_stacklvl 2: ', stacklvl, calloptions.add_to_stacklvl, this.tempOptions);
       if ( calloptions.add_to_stacklvl ) stacklvl += calloptions.add_to_stacklvl;
+      while ( __stack[stacklvl] == undefined && stacklvl > 0) stacklvl--;  // don't go so high up you run out of stack!
       let fn = __stack[stacklvl].getFileName();
       let ln = __stack[stacklvl].getLineNumber();
       let p = this.trimpath(fn, calloptions.trimTo) + ':' + ln;
@@ -421,6 +430,7 @@ class Logger {
         break;
       case 'console':
         console.log.apply(this, _args);
+        retval = this;
         break;
       default:
         throw new Error(`Logger has unknown outputTo option of ${calloptions.outputTo}.`);
@@ -750,6 +760,106 @@ class Logger {
     if ( Logger._glogger == null ) { Logger._glogger = new Logger('', {debug : true}, {}); }
     return Logger._glogger;
   }
+
+
+  /**
+   * Internal function for profiling, that decorates this function to capture performance timing.
+   * @param {function} _f - the function to instrument
+   */
+  static _pf(_f, _async = false) {
+    let retval = null;
+
+    if ( _async == false ) {
+      retval = function() {
+        // per call
+        let cur = performance.now();
+        let ret = _f.apply(this, arguments);
+        let post = performance.now();
+
+        // update
+        let runtime = post-cur;
+        retval._wl.tCalls++;
+        retval._wl.tTime += runtime;
+        retval._wl.lastRun = runtime;
+        return ret;
+      };
+      Object.defineProperty(retval, 'name', { value: _f.name });
+    }
+    else {
+      retval = async function() {
+        // per call
+        let cur = performance.now();
+        let ret = _f.apply(this, arguments);
+        let post = performance.now();
+
+        // update
+        let runtime = post-cur;
+        retval._wl.tCalls++;
+        retval._wl.tTime += runtime;
+        retval._wl.lastRun = runtime;
+        return ret;
+      };
+      Object.defineProperty(retval, 'name', { value: _f.name });
+    }
+
+
+    // per function
+    retval._wl = {
+      lastRun : null,
+      tCalls  : 0,
+      tTime   : 0,
+    };
+    return retval;
+  }
+
+  /** Call on all "Own" functions of an object. */
+  static pfObj(_o) {
+    if ( _o.constructor.name != Object.name) throw Error('Can not call on object created from class');
+
+    for ( let k in _o ) {
+      if ( _o.hasOwnProperty(k) ) {
+        if ( (_o[k] instanceof Function) === true ) {
+          _o[k] = Logger.pfAsyncSafe(_o[k]);
+        }
+      }
+    }
+  }
+
+  /*
+  static pfClass(_o) {
+    if ( ! _o.constructor ) throw Error('Can not call on non class');
+    for ( let k in _o.constructor.prototype) {
+      console.log(`  - check method ${k}`);
+      if ( _o.constructor.hasOwnProperty(k) ) {
+        console.log(`    - has property ${k} '${_o.constructor[k]}'`);
+        if ( (_o.constructor[k] instanceof Function) === true ) {
+          console.log(`    - replace class ${k}`);
+          _o.constructor[k] = Logger.pfAsyncSafe(_o.constructor[k]);
+        }
+      }
+    }
+  }
+  */
+
+  static pfReport(_f, _l = null) {
+    let logger = _l; if ( logger == null ) logger = Logger.g();
+    logger.info(' performance report on function : ', _f.name);
+    logger.info('       total calls: ', Logger.pfTotalCalls(_f));
+    logger.info('        total time: ', Logger.pfTotalTime(_f));
+    logger.info(' ave time per call: ', Logger.pfAveTime(_f));
+  }
+  static pfReportLast(_f, _l = null) {
+    let logger = _l; if ( logger == null ) logger = Logger.g();
+    logger.info('          last run: ', Logger.pfLastRun(_f));
+  }
+
+  static pf(_f) { return Logger._pf(_f, false); }
+  static pfa(_f) { return Logger._pf(_f, true); }
+  static pfAsyncSafe(_f) { return Logger._pf(_f,  (_f instanceof AsyncFunction) === true); }
+  static pfLastRun(_f)    { return _f._wl.lastRun; }
+  static pfTotalCalls(_f) { return _f._wl.tCalls; }
+  static pfTotalTime(_f)  { return _f._wl.tTime; }
+  static pfAveTime(_f)    { return _f._wl.tTime / _f._wl.tCalls; }
 
 };
 Logger._glogger = null;

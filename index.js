@@ -817,14 +817,104 @@ class Logger {
     if ( _o.constructor.name != Object.name) throw Error('Can not call on object created from class');
 
     for ( let k in _o ) {
+      console.log(`  - check pfObj ${k}`);
       if ( _o.hasOwnProperty(k) ) {
         if ( (_o[k] instanceof Function) === true ) {
+          console.log(`    - instrumenting ${k}`);
           _o[k] = Logger.pfAsyncSafe(_o[k]);
         }
       }
     }
   }
 
+
+  static pfClass(_cl) {
+    console.log(`pfClass: ${_cl.name} ${Logger.typeof(_cl)}.`);
+    let thing = _cl;
+    let cflag = null;
+    let props = null;
+
+    // if already run, skip
+    if ( thing.hasOwnProperty('_wl') == true ) return;
+
+    do {
+      cflag = false;
+
+      // static members of class 
+      props = Object.getOwnPropertyNames(thing);
+      console.log('props from __proto__ (static): ', props);
+      for (let k in props) {
+        let prop = props[k];
+        console.log(`  - check ${prop} : `, Logger.pfIs(prop));
+        if ( prop != 'constructor' && thing.hasOwnProperty(prop) && (!Logger.pfIs(prop)) ) {
+          if ( (thing[prop] instanceof Function) === true ) {
+            console.log(`    - instrumenting ${prop}`, thing.__proto__[prop]);
+            thing[prop] = Logger.pfAsyncSafe(thing[prop]);
+          }
+        }
+      }
+
+      // non-static members of class
+      props = Object.getOwnPropertyNames(thing.prototype);
+      console.log('props from prototype (non-static) :', Object.getOwnPropertyNames(thing.prototype));
+      for (let k in props) {
+        let prop = props[k];
+        console.log(`  - check ${prop}`);
+        if ( prop != 'constructor' && thing.prototype.hasOwnProperty(prop) && (!Logger.pfIs(prop)) ) {
+          if ( (thing.prototype[prop] instanceof Function) === true ) {
+            console.log(`    - instrumenting ${prop}`);
+            thing.prototype[prop] = Logger.pfAsyncSafe(thing.prototype[prop]);
+          }
+        }
+      }
+
+      // mark class as being pfed
+      thing._wl = true;
+
+      thing = Logger.getParentClass(thing);
+      console.log('thing wl is ', thing._wl);
+      if ( thing !== Function.prototype && thing._wl == undefined) {
+        cflag = true;
+        console.log('going to ', thing.name, Object.getOwnPropertyNames(thing));
+      }
+      else {
+        console.log('stopping');
+      }
+    } while (cflag == true);
+  }
+
+  static pfInstance(_thing) {
+    console.log(`pfThing : ${Logger.typeof(_thing)}.`);
+
+    let thing = _thing;
+    let cflag = null;
+
+    do {
+      cflag = false;
+
+      // on self
+      let props = Object.getOwnPropertyNames(thing);
+      console.log('props: ', props);
+      for (let k in props) {
+        let prop = props[k];
+        console.log(`  - check ${prop}`);
+        if ( prop != 'constructor' && thing.hasOwnProperty(prop) ) {
+          if ( (thing[prop] instanceof Function) === true ) {
+            console.log(`    - instrumenting ${prop}`);
+            _thing[prop] = Logger.pfAsyncSafe(_thing[prop]);
+          }
+        }
+      }
+
+      thing = thing.__proto__;
+      if ( thing !== Object.prototype) {
+        cflag = true;
+        console.log('going to ', thing, Object.getOwnPropertyNames(thing));
+      }
+    } while(cflag);
+
+
+  };
   /*
   static pfClass(_o) {
     if ( ! _o.constructor ) throw Error('Can not call on non class');
@@ -860,8 +950,439 @@ class Logger {
   static pfTotalCalls(_f) { return _f._wl.tCalls; }
   static pfTotalTime(_f)  { return _f._wl.tTime; }
   static pfAveTime(_f)    { return _f._wl.tTime / _f._wl.tCalls; }
+  static pfIs(_f)         { if ( _f._wl != null ) return true; return false; }
 
+
+  // static pfCoverageClass(_o, _t )  { Logger._pfCoverage(_o, _t, 'class'); }
+  // static pfCoverageObject(_o, _t ) { Logger._pfCoverage(_o, _t, 'object'); }
+
+  /**
+   */
+  static pfCoverage(_thing, _msg) {
+    let retval = null;
+    let ty = Logger.typeof(_thing);
+    Logger.g().info(`Woveon-Logger: Coverage of ${ty}${(_msg!== undefined)?` '${_msg}'`:``}`);
+
+    switch ( ty ) {
+      case 'FUNCTION':
+        retval = Logger.pfAsyncSafe(_thing);
+        break;
+      case 'INSTANCE':
+        // here, walk all instance functions
+        break;
+      default:
+        Logger.g().throwError(`Unknown coverage method for ${ty}.`);
+        break;
+    }
+
+    return retval;
+  }
+
+  /*
+  static _pfCoverage(_o, _t, _otype) {
+    Logger.g().info(`Woveon-Logger: Coverage of '${_otype}': ${(_t!== undefined)?`'${_t}'`:``}`);
+    let obj = _o;
+    let cflag = false;
+
+    do {
+      cflag = false;
+
+      // Logger.g().info(`  - ${obj.name} ${obj.constructor.name}`);
+ 
+      let cprops = [];
+      let pp = Object.getOwnPropertyNames(obj);
+      for (let k in pp) {
+        if ( pp.hasOwnProperty(k) ) {
+          let prop = pp[k];
+          let pd = Object.getOwnPropertyDescriptor(obj, prop);
+          Logger.g().info(`    - pd ${prop} - `, pd);
+          if ( 'value' in pd) cprops.push(prop);
+          // if ( pd.writable) cprops.push(prop);
+        }
+      }
+      // Logger.g().info(' ffFunc pd: ', Object.getOwnPropertyDescriptor(obj, 'ffFunc'));
+      Logger.g().info(`  - ${obj.name} A${obj.__proto__.__proto__ === Object.prototype}A : static and vars `, Object.getOwnPropertyNames(obj), ' : cprops ', cprops);
+
+
+      if ( obj.prototype && obj.prototype !== Object.prototype )
+        Logger.g().info(`    - ${obj.name}.prototype : class method defs `, Object.getOwnPropertyNames(obj.prototype), 
+          obj.prototype === Object.prototype );
+      if ( obj.constructor ) { //  && obj.constructor !== Object.prototype ) {
+        // Logger.g().info(`    - ${obj.name}.constructor : instance static class methods `, Object.getOwnPropertyNames(obj.constructor));
+
+        let cprops = [];
+        let pp = Object.getOwnPropertyNames(obj.constructor);
+        for (let k in pp) {
+          if ( pp.hasOwnProperty(k) ) {
+            let prop = pp[k];
+            let pd = Object.getOwnPropertyDescriptor(obj.constructor, prop);
+            // Logger.g().info(`    - pd ${prop} - `, JSON.stringify(pd));
+            if ( pd.writable) cprops.push(prop);
+          }
+        }
+        Logger.g().info(`    - ${obj.name}.constructor : instance static class methods [${cprops}] of [${Object.getOwnPropertyNames(obj.constructor)}].`);
+
+        // Logger.g().info(`    - ${obj.name}.constructor.__proto__ `, Object.getOwnPropertyNames(obj.constructor.__proto__));
+      }
+
+      / *
+      if ( obj.prototype != null ) {
+        Logger.g().info('  .obj.prototype');
+        obj = obj.prototype;
+      }
+      else {
+        Logger.g().info('  .obj.__proto__');
+        obj = Object.getPrototypeOf(obj);
+      }
+      * /
+      // Logger.g().info(' obj is ', obj);
+      //
+      //
+
+      if (obj.constructor.name != 'Function') obj = obj.constructor;
+      else obj = obj.__proto__;
+
+      // obj = obj.__proto__;
+
+      if ( obj != null && Object.getPrototypeOf(obj) !== Object.prototype ) cflag = true;
+    } while (cflag);
+
+  }
+  */
+  /*
+  static _pfCoverage(_o, _t, _otype) {
+    Logger.g().info(`Woveon-Logger: Coverage of '${_otype}': ${(_t!== undefined)?`'${_t}'`:``}`);
+
+    // recurse through prototypes
+    let obj = _o;
+    let objcl = null;
+    let cflag = null;
+    do {
+      cflag = false;
+      console.log('test constructor name : ', obj.constructor.name, '.', obj.name, '.',  
+        obj.constructor.prototype.name, '.', obj.name, '.',  Object.getPrototypeOf(obj) == Object.prototype);
+      Object.getOwnPropertyNames(obj)
+        .forEach( (prop) => {
+          Logger.g().info(`  - found prop '${prop}'`);
+          let val = null;
+
+          // if ( prop == 'arguments' ) return;
+
+
+          try {
+            if ( _otype == 'object' ) {
+              let pd = Object.getOwnPropertyDescriptor(obj, prop);
+              console.log('pd : ', pd);
+              if ( pd != null && ( pd.get ) ) { console.log('  : skipping getter/setter ', pd); return; }
+              val = obj[prop]; // eslint-disable-line security/detect-object-injection
+            }
+            else if ( _otype == 'class' ) {
+              let pd = Object.getOwnPropertyDescriptor(obj.constructor.prototype, prop);
+              console.log('pd : ', pd);
+              if ( pd != null && ( pd.get ) ) { console.log('  : skipping getter/setter ', pd); return; }
+              val = obj.constructor.prototype[prop]; // eslint-disable-line security/detect-object-injection
+            }
+            else { throw Error(`Unknown _otype of '${_otype}'`); }
+          }
+          catch (e) { 
+            console.log(`Unable to get property ${val}.`);
+            throw Error(`Unabled to get property '${val}'... is it a getter?`); 
+          }
+
+          if ( val != null && prop !== 'constructor' && typeof val === 'function' && prop != 'apply' && prop != 'call' ) {
+            Logger.g().info(`    - '${prop}' is a function to instrument`);
+            if ( _otype == 'object' ) {
+              console.log('    -o ', obj[prop]);
+              obj[prop] = Logger.pfAsyncSafe(val);
+            }
+            else if ( _otype == 'class' ) {
+              console.log('    -c ', obj.constructor.prototype[prop]);
+              obj.constructor.prototype[prop] = Logger.pfAsyncSafe(val);
+            }
+            else { throw Error(`Unknown _otype of '${_otype}'`); }
+          }
+
+        });
+      Logger.g().info('...try to descend');
+      obj = Object.getPrototypeOf(obj);
+      if ( obj != null && Object.getPrototypeOf(obj) != Object.prototype ) cflag = true;
+      if ( cflag == false && _otype == 'class' ) {
+        Logger.g().info('  ... reached end of obj, so look for obj.constructor');
+        obj = Object.getPrototypeOf(obj.constructor);
+        if ( obj != null && Object.getPrototypeOf(obj) != Object.prototype ) cflag = true;
+      }
+    } while( cflag ) ; //obj != null && Object.getPrototypeOf(obj) != Object.prototype );
+    // } while (obj = Object.getPrototypeOf(obj));
+ */
+
+      /*
+    for (let k in _o ) {
+      if ( _o.hasOwnProperty(k) ) {
+        // Logger.g().info(`pfCoverageObject prop (${typeof _o[k]}): `, k);
+        if ( (typeof _o[k] ) == 'function' ) {
+          _o[k] = Logger.pfAsyncSafe(_o[k]);
+        }
+      }
+    }
+    */
+ //  }
+//
+//
+//
+  /*
+  static pfCoverageReport(_co, _t) {
+    // if ( _t != null ) { Logger.g().info(`Woveon-Logger: Coverage Report:${_t}`); }
+
+    // error function for non-pfed 
+    let ef = function(_co, _ty, _t) {
+      / *
+      Logger.g().info('_co: prototype :', _co.prototype);
+      Logger.g().info('_co: name      :', _co.name);
+      Logger.g().info('_co: prototype.name :', _co.prototype.name);
+      Logger.g().info('_co: name.prototype :', _co.name.prototype);
+      Logger.g().info('_co: constructor:', _co.constructor);
+      * /
+      if ( _co.constructor ) {
+        for (let k in _co ) {
+          Logger.g().info(`  : _co: constructor ${k}:`, _co.constructor[k]);
+        }
+      }
+      throw Error(`Uninstrumented ${_ty} to report on '${_t}', typeof '${typeof _co}': `, JSON.stringify(_co, null, '**'));
+    };
+
+    if ( (typeof _co) == 'function' ) {
+
+      // function or class
+      if ( Logger.pfIs(_co) == false ) ef(_co, 'function', _t);
+      Logger._pfCoverageReport_f(_co, _t);
+    }
+    else if ( (typeof _co) == 'object' ) {
+      Logger._pfCoverageReport_object(_co, _t);
+    }
+    else if ( _co === undefined ) {
+      Logger.g().info(`pfCoverageReport on all here: TODO`);
+    }
+    else throw Error(`Unknown object to report on ${_t}: `, JSON.stringify(_co, null, '**'));
+  }
+  */
+
+  static pfCoverageReport(_thing, _msg) {
+    let ty = Logger.typeof(_thing);
+
+    Logger.g().info(`Woveon-Logger: Coverage Report of ${ty}: ${_msg}`);
+
+    switch (ty) {
+      case 'FUNCTION':
+        Logger._pfCoverageReport_f(_thing, 'function');
+        break;
+      case 'INSTANCE':
+        Logger._pfCoverageReport_instance(_thing, 'instance');
+        break;
+      default:
+        Logger.g().error(`Unknown type of _thing ${ty} to report coverage on`);
+    };
+  }
+
+  static _pfCoverageReport_f(_f, _t) {
+    Logger.g().info(`  : ${_t} : ${_f._wl.tCalls} ${_f._wl.tTime}`);
+  }
+
+  static _pfCoverageReport_class(_cl, _t) {
+    Logger.g().info(`  : ${_cl} : ${_cl._wl.tCalls} ${_cl._wl.tTime}`);
+  }
+
+
+  static _pfCoverageReport_instance(_o, _t) {
+    Logger.g().info(`pfCoverageReport instance of class ${_o.constructor.name}`);
+    // recurse through prototypes
+    let obj = _o;
+    let passnum = 1;
+    do {
+      console.log(`>pass ${passnum} `, obj);
+
+      if ( obj.constructor.name != 'Object' ) {
+        Object.getOwnPropertyNames(obj)
+          .forEach( (prop) => {
+            // Logger.g().info(`  - found '${prop}'`);
+
+            let val = null;
+
+            try {
+              val = _o[prop]; // eslint-disable-line security/detect-object-injection
+            }
+            catch (e) { throw Error(`unabled ot get property '${val}'... is it a getter?`); }
+
+            if ( val != null && prop !== 'constructor' && typeof val === 'function'  ) {
+              // Logger.g().info(`    - '${prop}' is a fuction to test instrumentation`);
+              if ( Logger.pfIs(val) ) { Logger._pfCoverageReport_f(val, prop); }
+            }
+
+          });
+        // Logger.g().info('...try to descend');
+      }
+      passnum++;
+    } while (obj = Object.getPrototypeOf(obj));
+  }
+
+  /*
+  static _pfCoverageReport_object(_o, _t) {
+    Logger.g().info(`pfCoverageReport object of class ${_o.constructor.name}`);
+
+
+    for (let k in _o ) {
+      let v = _o[k];
+      Logger.g().info(`  - property ${k} : ${_o.hasOwnProperty(k)} ${typeof v}`);
+      if ( _o.hasOwnProperty(k) ) {
+        // silently skip over non-instrumented functions
+        if ( (typeof v ) == 'function' ) {
+          Logger.g().info(`  - function ${k} : is pfed ${Logger.pfIs(v)}`);
+          if ( Logger.pfIs(v) ) { Logger._pfCoverageReport_f(v, k); }
+        }
+      }
+    }
+
+    for (let k in _o.constructor ) {
+      Logger.g().info('k : ', k, _o.constructor[k]);
+      let v = _o.constructor[k];
+      Logger.g().info(`  - constructor property ${k} : ${_o.hasOwnProperty(k)} ${_o.constructor.hasOwnProperty(k)} ${typeof v}`, v, k);
+      if ( _o.constructor.hasOwnProperty(k) ) {
+        // silently skip over non-instrumented functions
+        if ( (typeof v ) == 'function' ) {
+          Logger.g().info(`  - function ${k} : is pfed ${Logger.pfIs(v)}`);
+          if ( Logger.pfIs(v) ) { Logger._pfCoverageReport_f(v, k); }
+        }
+      }
+    }
+
+  }
+  */
+
+
+  /**
+   * Spew a bunch of stuff about _t.
+   * @param {*} _t -
+   */
+  static spew(_t) {
+    console.log('thing.name: ', _t.name);
+    console.log('thing getOwnPropertyNames() : ', Object.getOwnPropertyNames(_t));
+    for (let k in Object.getOwnPropertyNames(_t) ) {
+      console.log(`  - ${k} - ${_t.hasOwnProperty(k)}`);
+    }
+    console.log('thing.constructor: ', _t.constructor);
+    if ( _t.constructor ) {
+      console.log('thing.constructor.name: ', _t.constructor.name);
+      for (let k in _t.constructor) { let v = _t.constructor[k]; console.log(`  thing.constructor[${k}]: `, v); }
+      if ( _t.constructor.prototype ) {
+        console.log('thing.constructor.prototype getOwnPropertyNames() : ', Object.getOwnPropertyNames(_t.constructor.prototype));
+      }
+    }
+    console.log('thing.constructor getOwnPropertyNames() : ', Object.getOwnPropertyNames(_t.constructor));
+    console.log('thing.prototype: ', _t.prototype);
+    if ( _t.prototype ) {
+      console.log('thing.prototype.name: ', _t.prototype.name);
+      console.log('thing.prototype.aFunc: ', _t.prototype.aFunc);
+      for (let k in _t.prototype) { let v = _t.prototype[k]; console.log(`  thing.prototype[${k}]: `, v); }
+      console.log('thing.prototype getOwnPropertyNames() : ', Object.getOwnPropertyNames(_t.prototype));
+
+      console.log('thing.prototype.constructor: ', _t.prototype.constructor);
+      console.log('typeof thing.prototype.constructor: ', typeof _t.prototype.constructor);
+      for (let k in _t.prototype.constructor) { let v = _t.prototype.constructor[k]; console.log(`  thing.prototype.constructor[${k}]: `, v); }
+      console.log('thing.prototype.constructor getOwnPropertyNames() : ', Object.getOwnPropertyNames(_t.prototype.constructor));
+
+      console.log('thing.prototype.constructor.prototype: ', _t.prototype.constructor.prototype);
+      for (let k in _t.prototype.constructor.prototype) { let v = _t.prototype.constructor[k].prototype; console.log(`  thing.prototype.constructor.prototype[${k}]: `, v); }
+      console.log('thing.prototype.constructor.prototype getOwnPropertyNames() : ', Object.getOwnPropertyNames(_t.prototype.constructor.prototype));
+    }
+  }
+
+
+  // ---------------------------------------------------------------------
+  // Typing
+  // ---------------------------------------------------------------------
+
+  /**
+   * Determines the type of a _thing. More useful than typeof since it
+   * includes classes and instances.
+   * @param {*} _thing - the thing to figure out what it is.
+   * @return {Symbol} - the determined type.
+   */
+  static typeof(_thing) {
+    let retval = null;
+    if ( _thing === null ) retval = Logger.ObjT.NULL;
+    else if ( _thing === undefined ) retval = Logger.ObjT.UNDEFINED;
+    else if ( typeof _thing == 'boolean' ) retval = Logger.ObjT.BOOL;
+    else if ( typeof _thing == 'number' ) retval = Logger.ObjT.NUMBER;
+    else if ( typeof _thing == 'string' ) retval = Logger.ObjT.STRING;
+    else if ( typeof _thing == 'symbol' ) retval = Logger.ObjT.SYMBOL;
+    else if ( _thing.prototype == null ) {
+      if ( _thing.constructor.prototype === Object.prototype) retval = Logger.ObjT.OBJECT;
+      else retval = Logger.ObjT.INSTANCE;
+    }
+    else {
+      if ( _thing.toString().startsWith('class') == true ) retval = Logger.ObjT.CLASS;
+      else retval = Logger.ObjT.FUNCTION;
+    }
+
+    return retval;
+  }
+
+  static getClass(_instance) { return _instance.constructor; }
+  static getParentClass(_class)   { 
+    if ( Logger.typeof(_class) == Logger.ObjT.CLASS ) return Object.getPrototypeOf(_class);
+    else throw Error('Called Woveon-Logger.getParentClass on non-class: ', _class);
+  }
+
+  /**
+   * Returns true if _u unknown is a 'class' or a function returning a function (pseudo class).
+   * @param {*} _u - unknown object to see if it is a class or pseudo class
+   * @return {boolean}
+   */
+  /*
+  static isClass(_u) {
+    let retval = false;
+    if ( (typeof _u) == 'function' ) {
+      Logger.g().info('_u name: ', _u.name);
+      Logger.g().info('_u instanceof Object: ', _u instanceof Object);
+      Logger.g().info('_u constructor: ', _u.constructor);
+      Logger.g().info('_u constructor.prototype: ', _u.constructor.prototype);
+      Logger.g().info('_u prototype: ', _u.prototype, _u.prototype.name, typeof _u.prototype);
+      for (let k in _u ) { Logger.g().info(`_u constructor '${k}': `, _u.constructor[k]); }
+      if ( _u.constructor ) retval =true;
+    }
+    return retval;
+  }
+  */
 };
+
+
+Logger.ObjT = {
+  UNDEFINED : 'UNDEFINED',
+  NULL      : 'NULL',
+  BOOL      : 'BOOL',
+  STRING    : 'STRING',
+  SYMBOL    : 'SYMBOL',
+  NUMBER    : 'NUMBER',
+  OBJECT    : 'OBJECT',   // includes objects generated from functions
+  FUNCTION  : 'FUNCTION',
+  CLASS     : 'CLASS',
+  INSTANCE  : 'INSTANCE',
+};
+/*
+Logger.ObjT = {
+  UNDEFINED : Symbol('UNDEFINED'),
+  NULL      : Symbol('NULL'),
+  BOOL      : Symbol('BOOL'),
+  STRING    : Symbol('STRING'),
+  SYMBOL    : Symbol('SYMBOL'),
+  NUMBER    : Symbol('NUMBER'),
+  OBJECT    : Symbol('OBJECT'),   // includes objects generated from functions
+  FUNCTION  : Symbol('FUNCTION'),
+  CLASS     : Symbol('CLASS'),
+  INSTANCE  : Symbol('INSTANCE'),
+};
+*/
+
+
 Logger._glogger = null;
 
 module.exports = Logger;

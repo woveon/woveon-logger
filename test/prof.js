@@ -10,61 +10,75 @@ let logger          = new Logger(`${mtag} Logger`, {debug : true, showName : tru
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
 
-/** Used to test intrumenting object methods. */
-class A {
+/**
+ * Returns these, so each test has a clear class.
+ */
+function genClass(_string) {
+  /** Used to test intrumenting object methods. */
+  class A {
 
-  /** */
-  constructor(_a, _b) { this.a = _a; this.b = _b; this.val = 1; }
+    /** */
+    constructor(_a, _b) { this.a = _a; this.b = _b; this.val = 1; }
 
-  /** */
-  aFunc() { /* console.log('aFunc hit'); */ return this.a; }
+    /** */
+    aFunc() { /* console.log('aFunc hit'); */ return this.a; }
 
-  /** */
-  async bFunc() { return this.b; }
+    /** */
+    async bFunc() { return this.b; }
 
-  /** */
-  static cFunc() { 
-    console.log('A.cFunc');
-    return A.c; }
+    /** */
+    static cFunc() { 
+      console.log('A.cFunc');
+      return A.c; }
 
-  /** */
-  static async dFunc() { return A.d; }
-};
+    /** */
+    static async dFunc() { return A.d; }
+  };
 
-class AA extends A {
-  /** */
-  constructor(a, b) { super(a,b); }
+  class AA extends A {
+    /** */
+    constructor(a, b) { super(a,b); }
 
-  static sa() { return this.val; }
+    static sa() { return this.val; }
 
-  a() { return this.val; }
+    a() { return this.val; }
 
-  aFunc() { return super.aFunc(); }
+    aFunc() { return super.aFunc(); }
 
-  static aaStaticFunc() { return 1; }
+    static aaStaticFunc() { return 1; }
 
-};
+  };
 
-class B extends A {
-  constructor(_a, _b) { super(_a, _b); }
-  aFunc() {
-    // console.log(`B.aFunc has a of ${this.a}.`);
-    let r = super.aFunc();
-    // console.log(`super.aFunc returned ${r}.`);
-    let retval= `B${r}`;
-    return retval;
+  class B extends A {
+    constructor(_a, _b) { super(_a, _b); }
+    aFunc() {
+      // console.log(`B.aFunc has a of ${this.a}.`);
+      let r = super.aFunc();
+      // console.log(`super.aFunc returned ${r}.`);
+      let retval= `B${r}`;
+      return retval;
+    }
   }
-}
 
-let D = function() {
-  this.dFunc = function() { return 'd'; };
-  Logger.g().info('D name : ', this.name);
-  Logger.g().info('D constructor: ', this.constructor);
-  return this;
+  let D = function() {
+    this.dFunc = function() { return 'd'; };
+    Logger.g().info('D name : ', this.name);
+    Logger.g().info('D constructor: ', this.constructor);
+    return this;
+  };
+
+  A.c = 'c';
+  A.d = 'd';
+
+  let retval = null;
+
+  if      ( _string == 'A' )  retval = A;
+  else if ( _string == 'AA' ) retval = AA;
+  else if ( _string == 'B' )  retval = B;
+  else if ( _string == 'D' )  retval = D;
+
+  return retval;
 };
-
-A.c = 'c';
-A.d = 'd';
 
 
 describe(`>Test(${mtag}): profiling`, async function() {
@@ -72,117 +86,301 @@ describe(`>Test(${mtag}): profiling`, async function() {
   before(async function() {
   });
 
-  it('> types', async function() {
-    /** */
-    class A { };
-    expect(Logger.typeof(undefined)).to.equal(Logger.ObjT.UNDEFINED);
-    expect(Logger.typeof(null)).to.equal(Logger.ObjT.NULL);
-    expect(Logger.typeof(true)).to.equal(Logger.ObjT.BOOL);
-    expect(Logger.typeof('foo')).to.equal(Logger.ObjT.STRING);
-    expect(Logger.typeof(Symbol())).to.equal(Logger.ObjT.SYMBOL);
-    expect(Logger.typeof(1)).to.equal(Logger.ObjT.NUMBER);
-    expect(Logger.typeof({})).to.equal(Logger.ObjT.OBJECT);
-    expect(Logger.typeof(function() {})).to.equal(Logger.ObjT.FUNCTION);
-    expect(Logger.typeof(A)).to.equal(Logger.ObjT.CLASS);
-    expect(Logger.typeof(new A())).to.equal(Logger.ObjT.INSTANCE);
+  describe.only('> instrumentation of things', async function() {
+
+    it('> instrument a function', async function() {
+      let f = function(_text) { console.log(_text); };
+      let ff = Logger.pf(f);
+
+      logger.info('pre:  ff: ', ff._wl);
+      ff('a');
+      logger.info('post: ff: ', ff._wl);
+      expect(ff._wl.lastRun).to.not.be.null;
+      expect(ff._wl.tCalls).to.equal(1);
+      expect(ff._wl.tTime).to.not.equal(0);
+
+      expect(Logger.pfLastRun(ff)).to.equal(ff._wl.lastRun);
+      expect(Logger.pfTotalCalls(ff)).to.equal(ff._wl.tCalls);
+      expect(Logger.pfTotalTime(ff)).to.equal(ff._wl.tTime);
+      expect(Logger.pfAveTime(ff)).to.equal(ff._wl.tTime / ff._wl.tCalls);
+
+      logger.info('          last run: ', Logger.pfLastRun(ff));
+      logger.info('       total calls: ', Logger.pfTotalCalls(ff));
+      logger.info('        total time: ', Logger.pfTotalTime(ff));
+      logger.info(' ave time per call: ', Logger.pfAveTime(ff));
+      Logger.pfReport(ff);
+    });
+
+    it('> instrument an async function', async function() {
+      let f = async function(_text) { console.log(_text); };
+      let ff  = Logger._pf_ff(f);
+      let ffa = Logger._pf_fa(f);
+
+      ff('a');
+      // logger.info('post: ff: ', ff._wl);
+      expect(ff._wl.lastRun).to.not.be.null;
+      expect(ff._wl.tCalls).to.equal(1);
+      expect(ff._wl.tTime).to.not.equal(0);
+
+      await ffa('a');
+      // logger.info('post: ffa: ', ffa._wl);
+      expect(ffa._wl.lastRun).to.not.be.null;
+      expect(ffa._wl.tCalls).to.equal(1);
+      expect(ffa._wl.tTime).to.not.equal(0);
+
+    });
+
+    it('> async Safe function', async function() {
+      let f1 = function(_text) { console.log(_text); };
+      let f2 = async function(_text) { console.log(_text); };
+      let ff = null;
+
+      ff = Logger._pf_f(f1);
+      expect(ff instanceof AsyncFunction).to.be.false;
+      // logger.info(' : ', ff instanceof AsyncFunction);
+      ff('not async');
+      await ff('not async');
+
+      ff = Logger._pf_f(f2);
+      expect(ff instanceof AsyncFunction).to.be.true;
+      // logger.info(' : ', ff instanceof AsyncFunction);
+      ff('async');
+      await ff('async');
+    });
+
+    it('> instrument an object', async function() {
+      let o = {oFunc : function() { return 'o'; }};
+
+      let oo = Logger._pf_object(o);
+      expect(oo.oFunc).to.not.be.null;
+      expect(Logger.pfTotalCalls(oo.oFunc)).to.equal(0);
+      expect(Logger.pfTotalCalls(o.oFunc)).to.equal(0);  // NOTE: this updates o too, since we don't want to deal with deep copy
+
+      expect(oo.oFunc()).to.equal('o');
+      expect(Logger.pfTotalCalls(oo.oFunc)).to.equal(1);
+      expect(Logger.pfTotalCalls(o.oFunc)).to.equal(1);  // NOTE: this updates o too, since we don't want to deal with deep copy
+
+      // create new one, restarts
+      oo = Logger._pf_object(o);
+      expect(Logger.pfTotalCalls(oo.oFunc)).to.equal(0);
+
+      Logger._pf_object(o);
+      expect(Logger.pfTotalCalls(oo.oFunc)).to.equal(0);
+
+    });
+
+    it('> instrument an instance', async function() {
+      let A = genClass('A');
+
+      // create an instance of a class
+      let a = new A('a', 'b');
+
+      // instrument an instance's function
+      a.aFunc = Logger.pf(a.aFunc);
+      expect(a.aFunc()).to.equal('a');
+      expect(a.aFunc._wl.tCalls).to.equal(1);
+      expect(a.aFunc()).to.equal('a');
+      expect(a.aFunc._wl.tCalls).to.equal(2);
+
+      // instrument an instance's async function
+      a.bFunc = Logger.pf(a.bFunc);
+      expect(await a.bFunc()).to.equal('b');
+      expect(a.bFunc instanceof AsyncFunction).to.be.true;
+      expect(a.bFunc._wl.tCalls).to.equal(1);
+
+      // instrument an instance
+      a = new A('a', 'b');
+      let ai = Logger.pf(a);
+      expect( Logger.pfTotalCalls(a.aFunc) ).to.equal(0);
+      expect( Logger.pfTotalCalls(ai.aFunc) ).to.equal(0);
+      expect( ai.aFunc() ).to.equal('a');
+      expect( Logger.pfTotalCalls(a.aFunc) ).to.equal(1);
+      expect( Logger.pfTotalCalls(ai.aFunc) ).to.equal(1);
+      Logger.pf(a);
+      expect( Logger.pfTotalCalls(a.aFunc) ).to.equal(1);
+      expect( Logger.pfTotalCalls(ai.aFunc) ).to.equal(1);
+
+      // create a new one and resets a, but not last one
+      a = new A('a', 'b');
+      Logger.pf(a);
+      expect( Logger.pfTotalCalls(a.aFunc) ).to.equal(0);
+      expect( Logger.pfTotalCalls(ai.aFunc) ).to.equal(1);
+
+    });
+
+    it.only('> instrument a class', async function() {
+      let A = genClass('A');
+      let AA = genClass('AA');
+      // logger.info('A.cFunc: ', A.cFunc);
+      Logger._pf_class(A);
+      // logger.info('A.cFunc: ', A.cFunc);
+      // logger.info('A._wl: ', A._wl);
+      let a = new A('a', 'b');
+      let aa = new AA('a', 'b');
+
+      logger.info('a.cFunc: ', a.cFunc);
+
+      A.cFunc(); // hits static function A.cFunc
+      AA.aaStaticFunc(); // hits static function of AA
+      a.aFunc();
+      Logger.pfReportCoverage(a);
+
+      // static functions
+      logger.info('A.cFunc: ', A.cFunc);
+      expect(Logger.pfIs(A.cFunc)).to.equal(true);
+      expect(Logger.pfIs(A.dFunc)).to.equal(true);
+      // logger.info('A.cFunc: ', A.cFunc, Logger.pfTotalCalls(A.cFunc));
+      expect(Logger.pfTotalCalls(A.cFunc)).to.equal(1);
+      expect(Logger.pfTotalCalls(A.dFunc)).to.equal(0);
+
+      // non-static functions
+      expect(Logger.pfIs(a.aFunc)).to.equal(true);
+      expect(Logger.pfIs(a.bFunc)).to.equal(true);
+      expect(Logger.pfTotalCalls(a.aFunc)).to.equal(1);
+      expect(Logger.pfTotalCalls(a.bFunc)).to.equal(0);
+
+      // AA has not been instrumented, so check then instrument
+      expect(Logger.pfIs(AA.aaStaticFunc)).to.equal(false);
+      logger.h3().info('re-pf-ing AA');
+      Logger.pf(AA);
+      expect(Logger.pfTotalCalls(A.cFunc)).to.equal(1);         // still 1, even though just did pf of AA (which has A has parent)
+      expect(Logger.pfIs(AA.aaStaticFunc)).to.equal(true);
+      expect(Logger.pfTotalCalls(AA.aaStaticFunc)).to.equal(0); // 0 since first call was before it was instrumented
+      AA.aaStaticFunc(); // hits static function of AA
+      expect(Logger.pfTotalCalls(AA.aaStaticFunc)).to.equal(1); // 1 since just called
+
+      logger.h3().info('fails b/c AA.cFunc not same as A.cFunc');
+      logger.info('A.cFunc: ', A.cFunc);
+      logger.info('AA.cFunc: ', AA.cFunc);
+      expect(Logger.pfTotalCalls(AA.cFunc)).to.equal( Logger.pfTotalCalls(A.cFunc) ); // same func
+      A.cFunc();
+      expect(Logger.pfTotalCalls(AA.cFunc)).to.equal( Logger.pfTotalCalls(A.cFunc) ); // same func
+
+      // pf again should do nothing
+      // logger.info('AA.aaStaticFunc 1: ', AA.aaStaticFunc);
+      Logger.pf(AA);
+      // logger.info('AA.aaStaticFunc 2: ', AA.aaStaticFunc);
+      expect(Logger.pfTotalCalls(AA.cFunc)).to.equal( Logger.pfTotalCalls(A.cFunc) ); // same func
+      expect(Logger.pfTotalCalls(AA.aaStaticFunc)).to.equal(1);
+
+    });
+
+    it('> pfIs on all things', async function() {
+      let A = genClass('A');
+      let AA = genClass('AA');
+      let a = new A('a', 'b');
+      let aa = new AA('a', 'b');
+      let o = {oFunc : function() { return 'o'; }};
+
+      console.log(' a has _wl:', a.hasOwnProperty('_wl'));
+      console.log(' a.aFunc has _wl:', a.aFunc.hasOwnProperty('_wl'));
+      expect(Logger.pfIs(a)).to.be.false;
+      expect(Logger.pfIs(a.aFunc)).to.be.false;
+      expect(Logger.pfIs(a.bFunc)).to.be.false;
+      expect(Logger.pfIs(A.cFunc)).to.be.false;
+      expect(Logger.pfIs(aa)).to.be.false;
+      expect(Logger.pfIs(A)).to.be.false;
+      expect(Logger.pfIs(AA)).to.be.false;
+      expect(Logger.pfIs(o)).to.be.false;
+
+      Logger.pf(A);
+      expect(Logger.pfIs(A)).to.be.true;
+      expect(Logger.pfIs(AA)).to.be.false;
+      Logger.pf(AA);
+      expect(Logger.pfIs(A)).to.be.true;
+      expect(Logger.pfIs(AA)).to.be.true;
+
+      let ai = Logger.pf(a);
+      Logger.pf(aa);
+      Logger.pf(o);
+      expect(Logger.pfIs(a)).to.be.true;
+      expect(Logger.pfIs(ai)).to.be.true;
+      expect(Logger.pfIs(a.aFunc)).to.be.true;
+      expect(Logger.pfIs(a.bFunc)).to.be.true;
+      expect(Logger.pfIs(A.cFunc)).to.be.true;
+      expect(Logger.pfIs(aa)).to.be.true;
+      expect(Logger.pfIs(A)).to.be.true;
+      expect(Logger.pfIs(AA)).to.be.true;
+      expect(Logger.pfIs(o)).to.be.true;
+
+    });
+
+
   });
 
-  it('> helper inheritance functions', async function() {
-    let aa = new AA('aa', 'bb');
-    let a  = new A('a', 'b');
 
-    expect( Logger.getClass(aa) ).to.equal(AA);
-    expect( Logger.getClass(a)  ).to.equal(A);
+  describe('> performance and correctness tests', async function() {
 
-    try {
-      Logger.getParentClass(a);
-      throw Error(1);
-    }
-    catch (e) {
-      if ( e.message == 1 ) throw Error('should have thrown error inside getParentClass, not after');
-    }
+    it('> cache test', async function() {
+      let f = function(_text) { console.log(_text); };
+      let ff = Logger.pf(f);
+      let iterations = 10;
 
-    expect( Logger.getParentClass(AA) ).to.equal(A);
-    expect( Logger.getParentClass(A) ).to.equal(A.__proto__);
+      for (let i=0; i<iterations; i++) {
+        ff(`${i}`); logger.info('          last run: ', Logger.pfLastRun(ff));
+      }
+    });
 
-    expect( Logger.getParentClass(Logger.getClass(aa)) ).to.equal(A);
-    expect( Logger.getParentClass(Logger.getClass(a)) ).to.equal(A.__proto__);
+    it('> run multiple times', async function() {
+      let f = function(_text) { console.log(_text); };
+      let ff = Logger.pf(f);
 
-    // parent of an instance
-    expect(a.aFunc()).to.equal('a');
-    expect(aa.aFunc()).to.equal('aa');
-  });
+      ff('a');
+      ff('b');
 
-  it('> instrument a function', async function() {
-    let f = function(_text) { console.log(_text); };
-    let ff = Logger.pf(f);
+      expect(ff._wl.tCalls).to.equal(2);
+    });
 
-    logger.info('pre:  ff: ', ff._wl);
-    ff('a');
-    logger.info('post: ff: ', ff._wl);
-    expect(ff._wl.lastRun).to.not.be.null;
-    expect(ff._wl.tCalls).to.equal(1);
-    expect(ff._wl.tTime).to.not.equal(0);
+    it('> performance impact', async function() {
+      this.timeout(20000);
+      let f = function(_text) { console.log(_text); };
+      let ff = Logger.pf(f);
+      let result = [];
+      let cur = 0;
+      let iterations = 500000;
 
-    expect(Logger.pfLastRun(ff)).to.equal(ff._wl.lastRun);
-    expect(Logger.pfTotalCalls(ff)).to.equal(ff._wl.tCalls);
-    expect(Logger.pfTotalTime(ff)).to.equal(ff._wl.tTime);
-    expect(Logger.pfAveTime(ff)).to.equal(ff._wl.tTime / ff._wl.tCalls);
+      // regular function
+      cur = performance.now();
+      for (let i=0; i<iterations; i++) { f('a'); }
+      result[0] = performance.now() - cur;
 
-    logger.info('          last run: ', Logger.pfLastRun(ff));
-    logger.info('       total calls: ', Logger.pfTotalCalls(ff));
-    logger.info('        total time: ', Logger.pfTotalTime(ff));
-    logger.info(' ave time per call: ', Logger.pfAveTime(ff));
-    Logger.pfReport(ff);
-  });
+      // instrumented function
+      cur = performance.now();
+      for (let i=0; i<iterations; i++) { ff('b'); }
+      result[1] = performance.now() - cur;
 
-  it('> cache test', async function() {
-    let f = function(_text) { console.log(_text); };
-    let ff = Logger.pf(f);
-    let iterations = 10;
+      logger.info(`regular function time : ${result[0].toFixed(2)} ms`);
+      logger.info(`instrumented function time : ${result[1].toFixed(2)} ms `);
+      logger.info(`overhead: ${((result[1] - result[0])/ result[0]).toFixed(2)} %`);
+    });
 
-    for (let i=0; i<iterations; i++) {
-      ff(`${i}`); logger.info('          last run: ', Logger.pfLastRun(ff));
-    }
-  });
+    it('> performance impact on non-io', async function() {
+      this.timeout(20000);
+      let f = function(_i) { let i = _i+1; return i; };
+      let ff = Logger.pf(f);
+      let result = [];
+      let cur = 0;
+      let iterations = 500000;
 
-  it('> instrument an async function', async function() {
-    let f = async function(_text) { console.log(_text); };
-    let ff  = Logger.pf(f);
-    let ffa = Logger.pfa(f);
+      // regular function
+      cur = performance.now();
+      for (let i=0; i<iterations; i++) { f(1); }
+      result[0] = performance.now() - cur;
 
-    ff('a');
-    logger.info('post: ff: ', ff._wl);
-    expect(ff._wl.lastRun).to.not.be.null;
-    expect(ff._wl.tCalls).to.equal(1);
-    expect(ff._wl.tTime).to.not.equal(0);
+      // instrumented function
+      cur = performance.now();
+      for (let i=0; i<iterations; i++) { ff(1); }
+      result[1] = performance.now() - cur;
 
-    await ffa('a');
-    logger.info('post: ffa: ', ffa._wl);
-    expect(ffa._wl.lastRun).to.not.be.null;
-    expect(ffa._wl.tCalls).to.equal(1);
-    expect(ffa._wl.tTime).to.not.equal(0);
+      logger.info(`regular function time : ${result[0].toFixed(2)} ms`);
+      logger.info(`instrumented function time : ${result[1].toFixed(2)} ms `);
+      logger.info(`overhead: ${((result[1] - result[0])/ result[0]).toFixed(2)} %`);
+    });
 
   });
 
-  it('> async Safe function', async function() {
-    let f1 = function(_text) { console.log(_text); };
-    let f2 = async function(_text) { console.log(_text); };
-    let ff = null;
-
-    ff = Logger.pfAsyncSafe(f1);
-    expect(ff instanceof AsyncFunction).to.be.false;
-    logger.info(' : ', ff instanceof AsyncFunction);
-    ff('not async');
-    await ff('not async');
-
-    ff = Logger.pfAsyncSafe(f2);
-    expect(ff instanceof AsyncFunction).to.be.true;
-    logger.info(' : ', ff instanceof AsyncFunction);
-    ff('async');
-    await ff('async');
-  });
-
+  /*
+   * intermediate test in development... not correct
   it('> class function', async function() {
     // create an object of a class
     let a = new A('a', 'b');
@@ -213,7 +411,9 @@ describe(`>Test(${mtag}): profiling`, async function() {
     expect(A.dFunc._wl.tCalls).to.equal(1);
 
   });
+  */
 
+  /* // test case used in development
   it('> instrument class object\'s methods', async function() {
     let a = new A('a', 'b');
     let b = {
@@ -252,7 +452,7 @@ describe(`>Test(${mtag}): profiling`, async function() {
     // ab object should be unchanged after a.aFunc called
     expect(ab.aFunc._wl.tCalls).to.equal(1);
 
-    /*
+    / *
     Logger.pfClass(a);
     expect(a.aFunc._wl.tCalls).to.equal(0);
     expect(a.bFunc._wl.tCalls).to.equal(0);
@@ -260,399 +460,146 @@ describe(`>Test(${mtag}): profiling`, async function() {
     expect(a.aFunc._wl.tCalls).to.equal(1);
     expect(await a.bFunc()).to.equal('b');
     expect(a.bFunc._wl.tCalls).to.equal(1);
-    */
+    * /
 
-  });
-
-  it('> instrument a class\'s function');
-    /*
-    A.aFunc = Logger.pf(A.aFunc);
-    b = new A('a', 'b');
-    expect(b.aFunc()).to.equal('a');
-    expect(b.aFunc._wl.tCalls).to.equal(0);
-    */
-
-  it('> instrument a class\'s async function');
-
-
-  it('> run multiple times', async function() {
-    let f = function(_text) { console.log(_text); };
-    let ff = Logger.pf(f);
-
-    ff('a');
-    ff('b');
-
-    expect(ff._wl.tCalls).to.equal(2);
-  });
-
-  it('> performance impact', async function() {
-    this.timeout(20000);
-    let f = function(_text) { console.log(_text); };
-    let ff = Logger.pf(f);
-    let result = [];
-    let cur = 0;
-    let iterations = 500000;
-
-    // regular function
-    cur = performance.now();
-    for (let i=0; i<iterations; i++) { f('a'); }
-    result[0] = performance.now() - cur;
-
-    // instrumented function
-    cur = performance.now();
-    for (let i=0; i<iterations; i++) { ff('b'); }
-    result[1] = performance.now() - cur;
-
-    logger.info(`regular function time : ${result[0].toFixed(2)} ms`);
-    logger.info(`instrumented function time : ${result[1].toFixed(2)} ms `);
-    logger.info(`overhead: ${((result[1] - result[0])/ result[0]).toFixed(2)} %`);
-  });
-
-  it('> performance impact on non-io', async function() {
-    this.timeout(20000);
-    let f = function(_i) { let i = _i+1; return i; };
-    let ff = Logger.pf(f);
-    let result = [];
-    let cur = 0;
-    let iterations = 500000;
-
-    // regular function
-    cur = performance.now();
-    for (let i=0; i<iterations; i++) { f(1); }
-    result[0] = performance.now() - cur;
-
-    // instrumented function
-    cur = performance.now();
-    for (let i=0; i<iterations; i++) { ff(1); }
-    result[1] = performance.now() - cur;
-
-    logger.info(`regular function time : ${result[0].toFixed(2)} ms`);
-    logger.info(`instrumented function time : ${result[1].toFixed(2)} ms `);
-    logger.info(`overhead: ${((result[1] - result[0])/ result[0]).toFixed(2)} %`);
-  });
-
-
-  // reachability
-
-
-  it('> code reachability: function', async function() {
-    // logger.info('--- unnamed function');
-    // try { Logger.pfCoverageReport(function() { return 'f'; }); } catch (e) {} // eslint-disable-line brace-style
-    let e = function() { return 'e'; };
-
-    logger.info('--- instance of e, ee function');
-    try { Logger.pfCoverageReport(e); } catch (e) {} // eslint-disable-line brace-style
-
-    logger.info('--- variable e function, instrument it');
-    e = Logger.pfCoverage(e, 'e');
-    logger.info('--- variable e function, instrumented');
-    Logger._pfCoverageReport_f(e, 'e');
-    logger.info('--- variable e function, called');
-    expect( Logger.pfTotalCalls(e) ).to.equal(0);
-    e();
-    logger.info('--- variable e function, report after called');
-    Logger._pfCoverageReport_f(e, 'e');
-    expect( Logger.pfTotalCalls(e) ).to.equal(1);
-
-    Logger.pfCoverageReport(e, 'full report on "e"');
-  });
-
-  it.only('> code reachability: class', async function() {
-    logger.info('A.cFunc: ', A.cFunc);
-    Logger.pfClass(A);
-    logger.info('A.cFunc: ', A.cFunc);
-    logger.info('A._wl: ', A._wl);
-    let a = new A('a', 'b');
-    let aa = new AA('a', 'b');
-
-    logger.info('a.cFunc: ', a.cFunc);
-
-    A.cFunc(); // hits static function A.cFunc
-    AA.aaStaticFunc(); // hits static function of AA
-    a.aFunc();
-    Logger.pfCoverageReport(a);
-
-    // static functions
-    logger.info('A.cFunc: ', A.cFunc);
-    expect(Logger.pfIs(A.cFunc)).to.equal(true);
-    expect(Logger.pfIs(A.dFunc)).to.equal(true);
-    logger.info('A.cFunc: ', A.cFunc, Logger.pfTotalCalls(A.cFunc));
-    expect(Logger.pfTotalCalls(A.cFunc)).to.equal(1);
-    expect(Logger.pfTotalCalls(A.dFunc)).to.equal(0);
-
-    // non-static functions
-    expect(Logger.pfIs(a.aFunc)).to.equal(true);
-    expect(Logger.pfIs(a.bFunc)).to.equal(true);
-    expect(Logger.pfTotalCalls(a.aFunc)).to.equal(1);
-    expect(Logger.pfTotalCalls(a.bFunc)).to.equal(0);
-
-    // AA has not been instrumented, so check then instrument
-    expect(Logger.pfIs(AA.aaStaticFunc)).to.equal(false);
-    Logger.pfClass(AA);
-    expect(Logger.pfTotalCalls(A.cFunc)).to.equal(1);         // still 1, even though just did pfClass of AA (which has A has parent)
-    expect(Logger.pfIs(AA.aaStaticFunc)).to.equal(true);
-    expect(Logger.pfTotalCalls(AA.aaStaticFunc)).to.equal(0); // 0 since first call was before it was instrumented
-    AA.aaStaticFunc(); // hits static function of AA
-    expect(Logger.pfTotalCalls(AA.aaStaticFunc)).to.equal(1); // 1 since just called
-
-    expect(Logger.pfTotalCalls(AA.cFunc)).to.equal( Logger.pfTotalCalls(A.cFunc) ); // same func
-    A.cFunc();
-    expect(Logger.pfTotalCalls(AA.cFunc)).to.equal( Logger.pfTotalCalls(A.cFunc) ); // same func
-
-    // pfClass again should do nothing
-    logger.info('AA.aaStaticFunc 1: ', AA.aaStaticFunc);
-    Logger.pfClass(AA);
-    logger.info('AA.aaStaticFunc 2: ', AA.aaStaticFunc);
-    expect(Logger.pfTotalCalls(AA.cFunc)).to.equal( Logger.pfTotalCalls(A.cFunc) ); // same func
-    expect(Logger.pfTotalCalls(AA.aaStaticFunc)).to.equal(1);
-
-  });
-
-
-  it('> code reachability: object', async function() {
-
-    // logger.info('-- class A'); Logger.spew(A);
-    // logger.info('-- class AA'); Logger.spew(AA);
-    logger.info('-- object a of class A');
-    let a = new A('a', 'b');
-    logger.info('-- object aa of class AA');
-    let aa = new AA('a', 'b');
-
-    logger.h2().info('-- covering a and aa');
-    Logger.pfInstance(a);
-    Logger.pfInstance(aa);
-
-    logger.info('-- calling a.aFunc()');
-    a.aFunc(); // hits A.aFunc
-    a.bFunc(); // hits A.bFunc
-    logger.info('-- calling aa.aFunc()');
-    aa.aFunc(); // hits AA.aFunc, calling A.aFunc
-    aa.bFunc(); // hits A.bFunc
-
-    logger.h2().info('-- a Coverage Report');
-    Logger.pfCoverageReport(a);
-    Logger.pfCoverageReport(aa);
-
-    expect(Logger.pfTotalCalls(a.aFunc)).to.equal(2);
-    expect(Logger.pfTotalCalls(a.bFunc)).to.equal(2);
-
-    expect(Logger.pfTotalCalls(aa.aFunc)).to.equal(1); // a.aFunc and aa.aFunc are different
-    expect(Logger.pfTotalCalls(aa.bFunc)).to.equal(2); // aa.bFunc is same as a.bFunc
-
-  });
-
-  it('> code reachability: pseudo class');
-
-  /*
-  it('> manually descend', async function() {
-    let aa = new AA('a', 'b');
-    // logger.info('A.constructor: ', Object.getOwnPropertyNames(A.constructor));
-    // logger.info('A.constructor.prototype: ', Object.getOwnPropertyNames(A.constructor.prototype));
-    //
-    logger.info('A:P ', Object.getOwnPropertyNames(A));
-    logger.info('A.prototype:  ', A.prototype);
-    logger.info('A.prototype.__proto__:  ', A.prototype.__proto__, A.prototype.__proto__ === Object.prototype);
-    logger.info('A.prototype:P ', Object.getOwnPropertyNames(A.prototype));
-    logger.info('A.__proto__:  ', A.__proto__);
-    logger.info('A.__proto__:P ', Object.getOwnPropertyNames(A.__proto__));
-    // logger.info('A.prototype.constructor (static):  ', A.prototype.constructor);
-    // logger.info('A.prototype.constructor (static):P ', Object.getOwnPropertyNames(A.prototype.constructor));
-
-    logger.h1();
-    logger.info('AA: ', Object.getOwnPropertyNames(AA));
-    logger.info('AA.constructor: ', AA.constructor);
-    logger.info('AA.prototype.constructor: ', AA.prototype.constructor);
-    logger.info('AA.prototype.__proto__.constructor: ', AA.prototype.__proto__.constructor);
-    logger.info('AA.prototype:  ', AA.prototype, Object.getPrototypeOf(AA) == AA.prototype, Object.getPrototypeOf(AA) == AA.__proto__ );
-    logger.info('AA.prototype.__proto__:  ', AA.prototype.__proto__);
-    logger.info('AA.prototype:P ', Object.getOwnPropertyNames(AA.prototype));
-    logger.info('AA.__proto__:P ', Object.getOwnPropertyNames(Object.getPrototypeOf(AA)));
-    // logger.info('AA.prototype.prototype == A.prototype ? ', A.prototype == Object.getPrototypeOf(AA.prototype));
-    logger.info('AA.prototype.__proto__: ', Object.getOwnPropertyNames(Object.getPrototypeOf(AA.prototype)));
-    logger.info('AA.prototype.__proto__.__proto__: ', Object.getOwnPropertyNames(Object.getPrototypeOf(Object.getPrototypeOf(AA.prototype))));
-
-    logger.info('aa.prototype: ', aa.prototype);
-    // logger.info('aa.prototype.__proto__: ', aa.prototype.__proto__);
-    logger.h1();
-    logger.info('A.__proto__: ', A.__proto__, A.__proto__ === Object);
-    logger.info('AA.__proto__: ', AA.__proto__);
-    logger.info('aa.__proto__: ', aa.__proto__);
-
-    logger.info('AA.prototype.__proto__ === A.prototype : ', AA.prototype.__proto__ === A.prototype);
-    logger.info('A.prototype.__proto__ === Object.prototype : ', A.prototype.__proto__ === Object.prototype);
-
-    // object with functions
-    let fff = {
-      fffFunc : function() { return 1; },
-    };
-
-    // generating function
-    let ff = function ff() { this.ffFunc = function() { return 1; }; return this; };
-    let ffr = ff();
-
-    // regular function
-    let f = function f() { return 1; };
-    logger.info('f.prototype: ', f.prototype);
-    logger.info('f.__proto__: ', f.__proto__, f.__proto__ === Function.prototype);
-    logger.info('f.prototype.prototype: ', f.prototype.prototype);
-    logger.info('f.prototype.__proto__: ', f.prototype.__proto__);
-    logger.info('f.__proto__.prototype: ', f.__proto__.prototype);
-    logger.info('f.__proto__.__proto__: ', f.__proto__.__proto__, f.__proto__.__proto__ === Object.prototype);
-    logger.info('f.__proto__.__proto__.__proto__: ', f.__proto__.__proto__.__proto__);
-
-    logger.info('f instanceof Object',   f instanceof Object);
-    logger.info('f instanceof Function', f instanceof Function);
-    logger.info('aa instanceof Object',   aa instanceof Object);
-    logger.info('aa instanceof Function', aa instanceof Function);
-    logger.info('A instanceof Object',   A instanceof Object);
-    logger.info('A instanceof Function', A instanceof Function);
-    logger.info('AA instanceof Object',   AA instanceof Object);
-    logger.info('AA instanceof Function', AA instanceof Function);
-    logger.info('Object instanceof Function', Object instanceof Function);
-    logger.info('Function instanceof Object', Function instanceof Object);
-
-    logger.info('aa:P ', Object.getOwnPropertyNames(aa));
-    logger.info('aa.__proto__:P ', Object.getOwnPropertyNames(aa.__proto__));
-    logger.info('aa.__proto__.__proto__:P ', Object.getOwnPropertyNames(aa.__proto__.__proto__));
-
-    logger.info('aa.constructor: ', aa.constructor);
-    logger.info('A.constructor: ', A.constructor);
-    logger.info('AA.constructor: ', AA.constructor);
-
-    logger.info('aa.constructor.name : ', aa.constructor.name);
-    logger.info('aa.name : ', aa.name);
-    logger.info('A.name : ', A.name);
-    logger.info('A.constructor.name : ', A.constructor.name, typeof A.constructor.name);
-    logger.info('A.prototype.constructor.name : ', A.prototype.constructor.name);
-
-    logger.info('f : ',   f.__proto__ !== undefined,   f.prototype !== undefined,   f.constructor !== undefined);
-    logger.info('ff : ',  ff.__proto__ !== undefined,  ff.prototype !== undefined,  ff.constructor !== undefined);
-    logger.info('ffr : ', ffr.__proto__ !== undefined, ffr.prototype !== undefined, ffr.constructor !== undefined);
-    logger.info('fff : ', fff.__proto__ !== undefined, fff.prototype !== undefined, fff.constructor !== undefined);
-    logger.info('aa : ',  aa.__proto__ !== undefined,  aa.prototype !== undefined,  aa.constructor !== undefined);
-    logger.info('A : ',   A.__proto__ !== undefined,   A.prototype !== undefined,   A.constructor !== undefined);
-    logger.info('AA : ',  AA.__proto__ !== undefined,  AA.prototype !== undefined,  AA.constructor !== undefined);
-
-    // diff generated f, obj w/ function and instance
-    logger.info('ffr : ', ffr.__proto__, ':', ffr.prototype, ':', ffr.constructor, ':', ffr.constructor.name, ':', ffr.constructor.prototype == Object.prototype );
-    logger.info('fff : ', fff.__proto__, ':', fff.prototype, ':', fff.constructor, ':', fff.constructor.name, ':', fff.constructor.prototype == Object.prototype );
-    logger.info('aa  : ', aa.__proto__, ':',  aa.prototype, ':',  aa.constructor,  ':', aa.constructor.name, ':', aa.constructor.prototype == Object.prototype );
-
-    logger.h3().info('diff func, generating func, class : f, ff, A,AA');
-    [['f', f], ['ff', ff], ['A', A], ['AA', AA]].forEach( function(v) {
-      logger.info(`${v[0]} : `, v[1].toString().startsWith('class'));
-      // logger.info(`${v[0]} : `, v[1].__proto__, ':', v[1].constructor, ':', v[1].constructor.name, v[1] );
-    });
-
-    [
-      ['null', null],
-      ['undefined', undefined],
-      ['bool', true],
-      ['int', 1],
-      ['string', 'hi'],
-      ['float', 1.1],
-      ['symbol', Symbol()],
-      ['f', f],
-      ['ff', ff],
-      ['ffr', ffr],
-      ['fff', fff],
-      ['aa', aa],
-      ['A', A],
-      ['AA', AA],
-    ].forEach( function(v) {
-      logger.info(`${v[0]} : ${typeof v[1]}`, Logger.typeof(v[1]));
-    });
-
-
-    exit(1);
-    Logger._pfCoverage(aa, 'aa', 'object');
-    Logger._pfCoverage(A, 'A', 'class');
-    Logger._pfCoverage(AA, 'AA', 'class');
-    Logger._pfCoverage(f, 'f', 'function');
-    Logger._pfCoverage(ff, 'ff', 'generating function');
-    Logger._pfCoverage(ffr, 'ffr', 'generated function');
-    Logger._pfCoverage(fff, 'fff', 'objectwithfunctions');
-    exit(1);
-
-    // logger.info('AA.prototype.constructor (static):  ', AA.prototype.constructor);
-    // logger.info('AA.prototype.constructor (static):P ', Object.getOwnPropertyNames(AA.prototype.constructor));
-    // logger.info('AA.prototype.prototype: ', Object.getOwnPropertyNames(Object.getPrototypeOf(Object.getPrototypeOf(AA))));
-
-    // logger.info('AA.prototype.constructor.prototype: ', Object.getOwnPropertyNames(AA.prototype.constructor.prototype));
-    // logger.info('AA.prototype.constructor.prototype.constructor (static): ', Object.getOwnPropertyNames(AA.prototype.constructor.prototype.constructor));
   });
   */
 
+  // ---------------------------------------------------------------------
+  // reachability
+  // ---------------------------------------------------------------------
 
-  it('> code reachability: class', async function() {
-    logger.info('-- class A');
-    Logger.spew(A);
-    logger.info('-- class AA');
-    Logger.spew(AA);
+  describe(`> Reachabiliy `, async function() {
 
-    logger.h2().info('-- covering A and AA');
-    Logger.pfCoverageClass(A);
-    Logger.pfCoverageClass(AA);
+    it('> code reachability: function', async function() {
+      let e = function() { return 'e'; };
 
-    logger.info('-- object a of class A');
-    let a = new A('a', 'b');
-    logger.info('-- object aa of class AA');
-    let aa = new AA('a', 'b');
+      logger.info('--- instance of e, ee function');
+      try { Logger.pfReportCoverage(e); } catch (e) {} // eslint-disable-line brace-style
 
-    logger.info('-- calling a.aFunc()');
-    a.aFunc(); // hits A.aFunc
-    a.bFunc(); // hits A.bFunc
-    logger.info('-- calling aa.aFunc()');
-    aa.aFunc(); // hits AA.aFunc, calling A.aFunc
-    aa.bFunc(); // hits A.bFunc
+      logger.info('--- variable e function, instrument it');
+      e = Logger.pfCoverage(e, 'e');
+      logger.info('--- variable e function, instrumented');
+      Logger._pfReportCoverage_f(e, 'e');
+      logger.info('--- variable e function, called');
+      expect( Logger.pfTotalCalls(e) ).to.equal(0);
+      e();
+      logger.info('--- variable e function, report after called');
+      Logger._pfReportCoverage_f(e, 'e');
+      expect( Logger.pfTotalCalls(e) ).to.equal(1);
 
-    logger.h2().info('-- a Coverage Report');
-    Logger.pfCoverageReport(a);
-    Logger.pfCoverageReport(aa);
+      Logger.pfReportCoverage(e, 'full report on "e"');
+    });
 
-    expect(Logger.pfTotalCalls(a.aFunc)).to.equal(2);
-    expect(Logger.pfTotalCalls(a.bFunc)).to.equal(2);
-
-    expect(Logger.pfTotalCalls(aa.aFunc)).to.equal(1); // a.aFunc and aa.aFunc are different
-    expect(Logger.pfTotalCalls(aa.bFunc)).to.equal(2); // aa.bFunc is same as a.bFunc
-
-  });
-  it('> code reachability all', async function() {
+    it('> code reachability: object');
 
 
-    Logger.pfCoverageClass(A);
-    Logger.pfCoverageClass(B);
-    Logger.pfCoverageObject(D);
 
-    let a = new A('a', 'b');
-    let a1= new A('a1', 'b1');
-    let c = {cFunc : function() { return c; }, cval : 1};
-    let d = new D();
-    let e = function() { return 'e'; }
+    it('> code reachability: object', async function() {
 
-    Logger.pfCoverageObject(a, 'a');
-    Logger.pfCoverageObject(c, 'c');
-    Logger.pfCoverageObject(d, 'd');
-    Logger.pfCoverageObject(e, 'e');
+      // logger.info('-- class A'); Logger.spew(A);
+      // logger.info('-- class AA'); Logger.spew(AA);
+      logger.info('-- object a of class A');
+      let a = new A('a', 'b');
+      logger.info('-- object aa of class AA');
+      let aa = new AA('a', 'b');
 
-    a.aFunc();
-    c.cFunc();
-    e();
+      logger.h2().info('-- covering a and aa');
+      Logger.pfInstance(a);
+      Logger.pfInstance(aa);
 
-    Logger.pfCoverageReport(A);  // show for A
-    Logger.pfCoverageReport(a, 'a');  // show for a, instance of A
-    Logger.pfCoverageReport(a1); // show for a1 (never instrumented)
+      logger.info('-- calling a.aFunc()');
+      a.aFunc(); // hits A.aFunc
+      a.bFunc(); // hits A.bFunc
+      logger.info('-- calling aa.aFunc()');
+      aa.aFunc(); // hits AA.aFunc, calling A.aFunc
+      aa.bFunc(); // hits A.bFunc
 
-    Logger.pfCoverageReport(B);  // show for B
+      logger.h2().info('-- a Coverage Report');
+      Logger.pfReportCoverage(a);
+      Logger.pfReportCoverage(aa);
 
-    Logger.pfCoverageReport(c, 'c');  // show for c (object with funcs)
+      expect(Logger.pfTotalCalls(a.aFunc)).to.equal(2);
+      expect(Logger.pfTotalCalls(a.bFunc)).to.equal(2);
 
-    Logger.pfCoverageReport(D);  // show for D, generating function
-    Logger.pfCoverageReport(d, 'd');  // show for d (generated object)
+      expect(Logger.pfTotalCalls(aa.aFunc)).to.equal(1); // a.aFunc and aa.aFunc are different
+      expect(Logger.pfTotalCalls(aa.bFunc)).to.equal(2); // aa.bFunc is same as a.bFunc
 
-    Logger.pfCoverageReport(e);  // show for e (function)
+    });
 
-    Logger.pfCoverageReport();   // show for all
+    it('> code reachability: pseudo class');
+
+    it('> code reachability: class', async function() {
+      logger.info('-- class A');
+      Logger.spew(A);
+      logger.info('-- class AA');
+      Logger.spew(AA);
+
+      logger.h2().info('-- covering A and AA');
+      Logger.pfCoverageClass(A);
+      Logger.pfCoverageClass(AA);
+
+      logger.info('-- object a of class A');
+      let a = new A('a', 'b');
+      logger.info('-- object aa of class AA');
+      let aa = new AA('a', 'b');
+
+      logger.info('-- calling a.aFunc()');
+      a.aFunc(); // hits A.aFunc
+      a.bFunc(); // hits A.bFunc
+      logger.info('-- calling aa.aFunc()');
+      aa.aFunc(); // hits AA.aFunc, calling A.aFunc
+      aa.bFunc(); // hits A.bFunc
+
+      logger.h2().info('-- a Coverage Report');
+      Logger.pfReportCoverage(a);
+      Logger.pfReportCoverage(aa);
+
+      expect(Logger.pfTotalCalls(a.aFunc)).to.equal(2);
+      expect(Logger.pfTotalCalls(a.bFunc)).to.equal(2);
+
+      expect(Logger.pfTotalCalls(aa.aFunc)).to.equal(1); // a.aFunc and aa.aFunc are different
+      expect(Logger.pfTotalCalls(aa.bFunc)).to.equal(2); // aa.bFunc is same as a.bFunc
+
+    });
+
+    it('> code reachability all', async function() {
+
+      Logger.pfCoverageClass(A);
+      Logger.pfCoverageClass(B);
+      Logger.pfCoverageObject(D);
+
+      let a = new A('a', 'b');
+      let a1= new A('a1', 'b1');
+      let c = {cFunc : function() { return c; }, cval : 1};
+      let d = new D();
+      let e = function() { return 'e'; };
+
+      Logger.pfCoverageObject(a, 'a');
+      Logger.pfCoverageObject(c, 'c');
+      Logger.pfCoverageObject(d, 'd');
+      Logger.pfCoverageObject(e, 'e');
+
+      a.aFunc();
+      c.cFunc();
+      e();
+
+      Logger.pfReportCoverage(A);  // show for A
+      Logger.pfReportCoverage(a, 'a');  // show for a, instance of A
+      Logger.pfReportCoverage(a1); // show for a1 (never instrumented)
+
+      Logger.pfReportCoverage(B);  // show for B
+
+      Logger.pfReportCoverage(c, 'c');  // show for c (object with funcs)
+
+      Logger.pfReportCoverage(D);  // show for D, generating function
+      Logger.pfReportCoverage(d, 'd');  // show for d (generated object)
+
+      Logger.pfReportCoverage(e);  // show for e (function)
+
+      Logger.pfReportCoverage();   // show for all
+    });
+
   });
 
 });

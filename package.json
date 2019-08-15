@@ -1,6 +1,6 @@
 {
   "name": "woveon-logger",
-  "version": "0.0.19",
+  "version": "0.0.20",
   "description": "A logging toolkit with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax.",
   "main": "index.js",
   "scripts": {
@@ -30,7 +30,6 @@
     "sprintf-js": "^1.1.x"
   },
   "devDependencies": {
-    "nyc": "^14.1.1",
     "mocha": "^5.2.x",
     "should": "^13.2.x"
   }

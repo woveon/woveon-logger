@@ -953,12 +953,15 @@ class Logger {
    */
   static __pf_f(_f, _async) {
     let retval = _f;
+    // console.log(`---- _pf_f init called`);
 
     // instrument function if it has not yet been
     if (retval._wl == undefined ) {
 
       if ( _async == false ) {
         retval = function() {
+
+          // console.log(`---- _pf_f function called`);
           // per call
           let cur = performance.now();
           let ret = _f.apply(this, arguments); // eslint-disable-line prefer-rest-params
@@ -975,6 +978,8 @@ class Logger {
       }
       else {
         retval = async function() {
+
+          // console.log(`---- _pf_f async function called`);
           // per call
           let cur = performance.now();
           let ret = _f.apply(this, arguments); // eslint-disable-line prefer-rest-params
@@ -1205,7 +1210,7 @@ class Logger {
             try {
               val = _o[prop]; // eslint-disable-line security/detect-object-injection
             }
-            catch (e) { throw Error(`unabled ot get property '${val}'... is it a getter?`); }
+            catch (e) { throw Error(`unabled ot get property '${prop}'... is it a getter?`); }
 
             if ( val != null && prop !== 'constructor' && typeof val === 'function'  ) {
               // Logger.g().info(`    - '${prop}' is a fuction to test instrumentation`);

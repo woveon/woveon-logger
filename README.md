@@ -1,3 +1,7 @@
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/woveon/woveon-logger.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/woveon/woveon-logger/alerts/)
+[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/woveon/woveon-logger.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/woveon/woveon-logger/context:javascript)
+
+
 # woveon-logger
 > A logging toolkit with: color, file and line number reporting, both aspect and levels of logging, and other sugar in the syntax."
 
